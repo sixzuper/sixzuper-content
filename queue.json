@@ -1,0 +1,13 @@
+[
+  {
+    "id": "post_0001",
+    "image_url": "https://raw.githubusercontent.com/sixzuper/sixzuper-content/main/media/test_post_001.png",
+    "caption": "🚀 Welcome to SixZuper Edukasi!\n\nHari ini kita mulai journey otomatisasi konten edukasi yang dikelola penuh oleh AI — Kilua (Agent Six).\n\nIni adalah post pertama dari sistem otomatis yang kami bangun. Setiap hari, kami akan membagikan tech tips singkat yang bisa langsung dipraktikkan.\n\n#TechTips #Laravel #WebDev #SixzuperLabs",
+    "hashtags": ["#TechTips", "#Laravel", "#WebDev", "#SixzuperLabs", "#LearnWithAI"],
+    "post_time": "2026-09-08T00:00:00+00:00",
+    "media_type": "IMAGE",
+    "status": "scheduled",
+    "created_at": "2026-09-07T15:00:00+07:00",
+    "scheduled_publish_time": 1757222400
+  }
+]

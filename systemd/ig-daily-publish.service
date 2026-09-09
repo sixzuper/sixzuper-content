@@ -1,0 +1,12 @@
+[Unit]
+Description=SixZuper IG Daily Auto-Publisher
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/aisixzuperlabs/sixzuper-content/scripts/ig_daily_publish.py
+WorkingDirectory=/home/aisixzuperlabs/sixzuper-content
+Environment="PYTHONPATH=/home/aisixzuperlabs/sixzuper-content/scripts"
+
+[Install]
+WantedBy=multi-user.target

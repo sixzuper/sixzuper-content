@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SixZuper Edukasi Post Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0A0A0F;
+            color: #E0E0E0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { color: #00D4FF; font-size: 24px; margin-bottom: 8px; }
+        .subtitle { color: #888; font-size: 14px; margin-bottom: 24px; }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        label {
+            font-size: 13px;
+            color: #AAA;
+            font-weight: 500;
+        }
+        input, textarea, select {
+            padding: 10px 12px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #111;
+            color: #FFF;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #00D4FF;
+        }
+        textarea { min-height: 80px; }
+        button {
+            background: #00D4FF;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            grid-column: span 2;
+        }
+        button:hover { background: #00B8D9; }
+        button:active { transform: scale(0.98); }
+        .preview {
+            background: #111;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 24px;
+            border: 1px solid #222;
+        }
+        .preview-title {
+            color: #888;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+        }
+        .instructions {
+            background: #1A1A2E;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 13px;
+            color: #AAA;
+        }
+        .instructions strong { color: #00D4FF; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>SixZuper Edukasi Post Generator</h1>
+    <p class="subtitle">Generate quote cards untuk konten edukasi Instagram. Tekan 'S' di canvas untuk download PNG (1080x1080).</p>
+
+    <div class="controls">
+        <div class="form-group">
+            <label>Tips Text</label>
+            <textarea id="tipText" placeholder="Contoh: Gunakan Queue Worker untuk task yang lambat...">&#x27;Hindari hardcoded values — pakai .env untuk semua konfigurasif&#x27;</textarea>
+        </div>
+        <div class="form-group">
+            <label>Source / Author</label>
+            <input type="text" id="sourceText" value="Pa Ricky • SixZuper Labs">
+        </div>
+        <div class="form-group">
+            <label>Brand Color</label>
+            <input type="color" id="brandColor" value="#00D4FF">
+        </div>
+        <div class="form-group">
+            <label>Background</label>
+            <select id="bgStyle">
+                <option value="dark">Dark Tech</option>
+                <option value="gradient">Gradient</option>
+                <option value="grid">Grid Pattern</option>
+            </select>
+        </div>
+        <button onclick="regenerate()">Generate Post</button>
+    </div>
+
+    <div class="instructions">
+        <strong>Cara pakai:</strong> <br>
+        1. Edit teks di atas<br>
+        2. Klik "Generate Post"<br>
+        3. Lihat preview di bawah<br>
+        4. Tekan tombol 'S' di dalam kotak canvas untuk download PNG<br>
+        5. Upload PNG ke CDN dan publish via IG Publisher
+    </div>
+
+    <div class="preview">
+        <div class="preview-title">Live Preview</div>
+        <div class="canvas-container">
+            <div id="sketch-holder"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+p5.disableFriendlyErrors = true;
+
+let tipText, sourceText, brandColor, bgStyle;
+let canvas;
+
+function setup() {
+    tipText = document.getElementById('tipText').value;
+    sourceText = document.getElementById('sourceText').value;
+    brandColor = document.getElementById('brandColor').value;
+    bgStyle = document.getElementById('bgStyle').value;
+
+    canvas = new p5(setupCanvas, 'sketch-holder');
+}
+
+function setupCanvas(p) {
+    let cnv = p.createCanvas(400, 400);
+    cnv.style('display', 'block');
+    cnv.parent('sketch-holder');
+    p.pixelDensity(1);
+    p.noLoop();
+    p.windowResized = () => {};
+    drawStatic(p);
+}
+
+function drawStatic(p) {
+    drawPost(p);
+}
+
+function drawPost(p) {
+    p.background(bgStyle === 'gradient' ? p.color(10,10,15) :
+                 bgStyle === 'dark' ? p.color(10,10,15) : p.color(15,15,25));
+
+    if (bgStyle === 'gradient') {
+        for (let i = 0; i < p.height; i++) {
+            let inter = p.map(i, 0, p.height, 0, 1);
+            let c = p.lerpColor(p.color(10,10,20), p.color(20,15,35), inter);
+            p.stroke(c);
+            p.strokeWeight(1);
+            p.line(0, i, p.width, i);
+        }
+    }
+
+    if (bgStyle === 'grid') {
+        p.stroke(255, 10);
+        p.strokeWeight(1);
+        for (let i = 0; i < p.width; i += 40) {
+            p.line(i, 0, i, p.height);
+        }
+        for (let j = 0; j < p.height; j += 40) {
+            p.line(0, j, p.width, j);
+        }
+    }
+
+    // Brand accent bar
+    p.fill(brandColor);
+    p.noStroke();
+    p.rect(0, 0, p.width, p.height * 0.06);
+
+    // Logo text
+    p.fill(255);
+    p.textSize(22);
+    p.textAlign(p.LEFT, p.CENTER);
+    p.textFont('monospace');
+    p.text("SIXZUPER", 16, p.height * 0.03);
+
+    // Main tip text
+    p.fill(255);
+    let fontSize = 24;
+    p.textSize(fontSize);
+    p.textAlign(p.CENTER, p.CENTER);
+    p.textFont('monospace');
+
+    // Wrap text
+    let lines = wrapText(p, tipText, p.width - 60);
+    let lineHeight = 32;
+    let startY = p.height / 2 - (lines.length - 1) * lineHeight / 2;
+    for (let i = 0; i < lines.length; i++) {
+        p.text(lines[i], p.width / 2, startY + i * lineHeight);
+    }
+
+    // Source attribution
+    p.fill(150);
+    p.textSize(16);
+    p.text(sourceText, p.width / 2, p.height / 2 + 80);
+
+    // Hashtags
+    p.fill(100);
+    p.textSize(14);
+    p.text("#Laravel #WebDev #TechTips #SixzuperLabs", p.width / 2, p.height - 40);
+}
+
+function wrapText(p, text, maxWidth) {
+    let words = text.split(' ');
+    let lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+        let word = words[i];
+        let width = p.textWidth(currentLine + ' ' + word);
+        if (width < maxWidth) {
+            currentLine += ' ' + word;
+        } else {
+            lines.push(currentLine);
+            currentLine = word;
+        }
+    }
+    lines.push(currentLine);
+    return lines;
+}
+
+function windowResized() {}
+
+function draw() {}
+
+function keyPressed() {
+    if (key === 's' || key === 'S') {
+        let canvas5 = document.querySelector('canvas');
+        if (canvas5) {
+            let link = document.createElement('a');
+            link.download = 'sixzuper_edu_post.png';
+            link.href = canvas5.toDataURL('image/png');
+            link.click();
+        }
+    }
+}
+
+function regenerate() {
+    tipText = document.getElementById('tipText').value;
+    sourceText = document.getElementById('sourceText').value;
+    brandColor = document.getElementById('brandColor').value;
+    bgStyle = document.getElementById('bgStyle').value;
+    if (canvas && canvas[0]) {
+        canvas[0].setup();
+    }
+}
+</script>
+</body>
+</html>
