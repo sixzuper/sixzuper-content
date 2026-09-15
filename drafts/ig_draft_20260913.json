@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-09-13T10:05:54.626582+00:00",
+  "posts": [
+    {
+      "slot": "08:00",
+      "wib_time": "08:00 WIB",
+      "theme": "tech tip",
+      "slot_label": "📍 Pagi ini — Tech Tip",
+      "tip_id": 4,
+      "category": "devops",
+      "title": "Git Rebase vs Merge",
+      "body": "Saat update branch:\n- `git merge` — history berantakan, tapi preserve konteks\n- `git rebase` — history linear, cocok untuk feature branches\n- `git rebase --interactive` — squashing commits sebelum merge ke main\n\nTip: gunakan `git log --graph --oneline --all` untuk visualisasi.",
+      "dalle_prompt": "Git branch visualization with merge and rebase arrows, clean tech illustration, dark theme with colorful branch lines, 1080x1080",
+      "captions": {
+        "long": "⚙️ *DevOps Tip #4*\n\nSaat update branch:\n- `git merge` — history berantakan, tapi preserve konteks\n- `git rebase` — history linear, cocok untuk feature branches\n- `git rebase --interactive` — squashing commits sebelum merge ke main\n\nTip: gunakan `git log --graph --oneline --all` untuk visualisasi.\n\n📌 #DevOps #SixZuper #Git #CI/CD",
+        "short": "⚙️ *DevOps Tip #4*\n\nSaat update branch:\n\n📌 #DevOps #SixZuper #Git #CI/CD",
+        "cta_only": "Simpan postingan ini untuk referensi nanti! 💾\n📌 #DevOps #SixZuper #Git #CI/CD"
+      }
+    },
+    {
+      "slot": "13:00",
+      "wib_time": "13:00 WIB",
+      "theme": "tech tip",
+      "slot_label": "📍 Siang ini — Tech Tip",
+      "tip_id": 10,
+      "category": "system_design",
+      "title": "Database Indexing Strategy",
+      "body": "Index kolom yang sering di-WHERE clause, tapi jangan berlebihan:\n- ✅ WHERE, JOIN, ORDER BY columns\n- ✅ Unique constraints\n- ❌ Too many indexes slows write\n- ❌ Index low-cardinality columns (bool, gender) — pakai partial index\n\nGunakan `EXPLAIN ANALYZE` untuk profiling query.",
+      "dalle_prompt": "Database indexing diagram showing indexed vs non-indexed columns, clean infographic style, blue and gray, 1080x1080",
+      "captions": {
+        "long": "🏛️ *System Design #10*\n\nIndex kolom yang sering di-WHERE clause, tapi jangan berlebihan:\n- ✅ WHERE, JOIN, ORDER BY columns\n- ✅ Unique constraints\n- ❌ Too many indexes slows write\n- ❌ Index low-cardinality columns (bool, gender) — pakai partial index\n\nGunakan `EXPLAIN ANALYZE` untuk profiling query.\n\n📌 #SystemDesign #SixZuper #Scalability",
+        "short": "🏛️ *System Design #10*\n\nIndex kolom yang sering di-WHERE clause, tapi jangan berlebihan:\n\n📌 #SystemDesign #SixZuper #Scalability",
+        "cta_only": "Simpan postingan ini untuk referensi nanti! 💾\n📌 #SystemDesign #SixZuper #Scalability"
+      }
+    },
+    {
+      "slot": "19:00",
+      "wib_time": "19:00 WIB",
+      "theme": "inspiration",
+      "slot_label": "📍 Malam ini — Inspiration",
+      "tip_id": 15,
+      "category": "random",
+      "title": "Git: Cherry-pick Specific Commit",
+      "body": "Ambil commit tertentu dari branch lain:\n```bash\ngit checkout main\ngit cherry-pick abc1234  # commit hash dari feature branch\n```\nBerguna untuk backport fix ke production branch.",
+      "dalle_prompt": "Git reflog timeline visualization showing branch recovery, technical illustration, green on dark, 1080x1080",
+      "captions": {
+        "long": "💡 *Daily Tech Tip #15*\n\nAmbil commit tertentu dari branch lain:\n```bash\ngit checkout main\ngit cherry-pick abc1234  # commit hash dari feature branch\n```\nBerguna untuk backport fix ke production branch.\n\n📌 Simpan post ini untuk referensi later!\\n#TechTips #SixZuper #Developer #CodeTips",
+        "short": "💡 *Daily Tech Tip #15*\n\nAmbil commit tertentu dari branch lain:\n\n📌 Simpan post ini untuk referensi later!\\n#TechTips #SixZuper #Developer #CodeTips",
+        "cta_only": "Simpan postingan ini untuk referensi nanti! 💾\n📌 Simpan post ini untuk referensi later!\\n#TechTips #SixZuper #Developer #CodeTips"
+      }
+    }
+  ]
+}

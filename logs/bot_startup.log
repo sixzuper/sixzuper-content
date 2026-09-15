@@ -1,0 +1,17 @@
+/home/aisixzuperlabs/sixzuper-content/telegram_bot.py:489: DeprecationWarning: Passing `parse_mode`, `disable_web_page_preview` or `protect_content` to Bot initializer is deprecated. This arguments will be removed in 3.7.0 version
+Use `default=DefaultBotProperties(...)` instead.
+  bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
+2026-09-10 12:28:31,374 [INFO] ✅ All 10 handlers registered
+2026-09-10 12:28:31,375 [INFO] 🚀 Starting bot loop...
+2026-09-10 12:28:32,071 [INFO] 🤖 Agent AI Kilua (@agentaisix_bot) started
+2026-09-10 12:28:32,624 [INFO] 📱 Connected to chat: IG SIXZUPER (-1003934372713)
+2026-09-10 12:28:32,626 [INFO] 👥 Allowed users: 2
+2026-09-10 12:28:32,627 [INFO] Start polling
+2026-09-10 12:28:32,628 [INFO] Run polling for bot @agentaisix_bot id=8592188693 - 'Agent AI Kilua'
+2026-09-10 12:28:55,845 [ERROR] Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-09-10 12:28:55,846 [WARNING] Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8592188693)
+2026-09-10 12:29:07,062 [INFO] Connection established (tryings = 1, bot id = 8592188693)
+2026-09-10 12:29:17,561 [WARNING] Received SIGTERM signal
+2026-09-10 12:29:17,564 [INFO] Polling stopped for bot @agentaisix_bot id=8592188693 - 'Agent AI Kilua'
+2026-09-10 12:29:17,566 [INFO] Polling stopped
+2026-09-10 12:29:17,567 [INFO] 🛑 Bot shutting down...

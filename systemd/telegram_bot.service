@@ -1,0 +1,19 @@
+[Unit]
+Description=SixZuper IG Content Pipeline - Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=aisixzuperlabs
+Group=aisixzuperlabs
+WorkingDirectory=/home/aisixzuperlabs/sixzuper-content
+Environment="PATH=/home/aisixzuperlabs/sixzuper-content/.venv/bin:/usr/bin:/bin"
+Environment="TELEGRAM_CHAT_ID=-1003934372713"
+ExecStart=/home/aisixzuperlabs/sixzuper-content/.venv/bin/python3 /home/aisixzuperlabs/sixzuper-content/telegram_bot.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

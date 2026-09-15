@@ -1,0 +1,56 @@
+{
+  "generated_at": "2026-09-15T10:05:13+00:00",
+  "generated_date": "2026-09-15",
+  "generator": "sixzuper-content-draft v1.0 (Agent Six/Kilua)",
+  "theme_base": "inspiration",
+  "posts": [
+    {
+      "slot": "08:00 WIB",
+      "theme": "inspiration",
+      "slug_label": "📍 Slot 1/3",
+      "tip_id": 10,
+      "category": "system_design",
+      "title": "Database Indexing Strategy",
+      "body": "Index kolom yang sering di-WHERE clause, tapi jangan berlebihan:\n- ✅ WHERE, JOIN, ORDER BY columns\n- ✅ Unique constraints\n- ❌ Too many indexes slows write\n- ❌ Index low-cardinality columns (bool, gender) — pakai partial index\n\nGunakan `EXPLAIN ANALYZE` untuk profiling query.",
+      "dalle_prompt": "Database indexing infographic in cyberpunk style: indexed columns as lit neon-blue pathways, non-indexed as dark gray, 3D infographic with holographic bars, dark tech background, 1080x1080",
+      "captions": {
+        "long": "🏛️ *Tip #10 — Database Indexing Strategy*\n\nIndex kolom yang sering di-WHERE clause, tapi jangan berlebihan:\n- ✅ WHERE, JOIN, ORDER BY columns\n- ✅ Unique constraints\n- ❌ Too many indexes slows write\n- ❌ Index low-cardinality columns (bool, gender) — pakai partial index\n\nGunakan `EXPLAIN ANALYZE` untuk profiling query.\n\n📌 #SystemDesign #SixZuper #Scalability",
+        "short": "🏛️ *Tip #10 — Database Indexing Strategy*\n\nIndex kolom yang sering di-WHERE clause, tapi jangan berlebihan:\n- ✅ WHERE, JOIN, ORDER BY columns\n- ✅ Unique constraints\n- ❌ Too many indexes slows write\n\n📌 #SystemDesign #SixZuper #Scalability",
+        "cta_only": "💾 Simpan post ini untuk referensi nanti!\n📌 #SystemDesign #SixZuper #Scalability"
+      },
+      "media_url": "https://via.placeholder.com/1080x1080/0a0a2e/00d4ff?text=Database+Indexing+Strategy"
+    },
+    {
+      "slot": "13:00 WIB",
+      "theme": "infra hack",
+      "slug_label": "📍 Slot 2/3",
+      "tip_id": 7,
+      "category": "tools",
+      "title": "SSH Config Shortcut",
+      "body": "Di `~/.ssh/config`:\n```\nHost stb1\n    HostName 192.168.1.12\n    User aisixzuperlabs\n    Port 22\n```\nSekarang tinggal: `ssh stb1`",
+      "dalle_prompt": "Minimalist cyberpunk terminal interface showing SSH config file with neon-blue monospace text, dark matrix background with particle stream, HUD-style UI elements, clean vector art, 1080x1080",
+      "captions": {
+        "long": "🛠️ *Tip #7 — SSH Config Shortcut*\n\nDi `~/.ssh/config`:\n```\nHost stb1\n    HostName 192.168.1.12\n    User aisixzuperlabs\n    Port 22\n```\nSekarang tinggal: `ssh stb1`\n\n📌 #Tools #SixZuper #DeveloperSetup",
+        "short": "🛠️ *Tip #7 — SSH Config Shortcut*\n\nDi `~/.ssh/config`:\n```\nHost stb1\n    HostName 192.168.1.12\n    User aisixzuperlabs\n    Port 22\n```\nSekarang tinggal: `ssh stb1`\n\n📌 #Tools #SixZuper #DeveloperSetup",
+        "cta_only": "💾 Simpan post ini untuk referensi nanti!\n📌 #Tools #SixZuper #DeveloperSetup"
+      },
+      "media_url": "https://via.placeholder.com/1080x1080/0a0a2e/00d4ff?text=SSH+Config+Shortcut"
+    },
+    {
+      "slot": "19:00 WIB",
+      "theme": "tech tip",
+      "slug_label": "📍 Slot 3/3",
+      "tip_id": 13,
+      "category": "api",
+      "title": "REST API Error Format",
+      "body": "Gunakan HTTP status code yang tepat:\n- 200 — GET, PUT, PATCH (success)\n- 201 — POST (created)\n- 204 — DELETE (no content)\n- 400 — Bad request\n- 401 — Unauthorized\n- 403 — Forbidden\n- 404 — Not found\n- 409 — Conflict\n- 429 — Too many requests\n\nResponse body:\n```json\n{\"error\": \"user_not_found\", \"message\": \"User ID 123 not found\", \"code\": 404}\n```",
+      "dalle_prompt": "Minimalist API gateway illustration with neon-blue request/response flow arrows, circuit-board background with glowing connections, cyberpunk HUD overlay, isometric vector art, 1080x1080",
+      "captions": {
+        "long": "🌐 *Tip #13 — REST API Error Format*\n\nGunakan HTTP status code yang tepat:\n- 200 — GET, PUT, PATCH (success)\n- 201 — POST (created)\n- 204 — DELETE (no content)\n- 400 — Bad request\n- 401 — Unauthorized\n- 403 — Forbidden\n- 404 — Not found\n- 409 — Conflict\n- 429 — Too many requests\n\nResponse body:\n```json\n{\"error\": \"user_not_found\", \"message\": \"User ID 123 not found\", \"code\": 404}\n```\n\n📌 #API #REST #SixZuper #WebDev",
+        "short": "🌐 *Tip #13 — REST API Error Format*\n\nGunakan HTTP status code yang tepat:\n- 200 — GET, PUT, PATCH (success)\n- 201 — POST (created)\n- 204 — DELETE (no content)\n- 400 — Bad request\n- 401 — Unauthorized\n- 403 — Forbidden\n- 404 — Not found\n\n📌 #API #REST #SixZuper #WebDev",
+        "cta_only": "💾 Simpan post ini untuk referensi nanti!\n📌 #API #REST #SixZuper #WebDev"
+      },
+      "media_url": "https://via.placeholder.com/1080x1080/0a0a2e/00d4ff?text=REST+API+Error+Format"
+    }
+  ]
+}

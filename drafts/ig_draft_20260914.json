@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-09-14T10:04:48.245498+00:00",
+  "generated_date": "2026-09-14",
+  "posts": [
+    {
+      "slot": "08:00",
+      "wib_time": "08:00 WIB",
+      "theme": "tech tip",
+      "slot_label": "📍 Pagi ini — Tech Tip",
+      "tip_id": 3,
+      "category": "security",
+      "title": "XSS Prevention di Laravel",
+      "body": "Raw output itu berbahaya. Gunakan `{!! !!}` hanya untuk HTML yang sudah distrip:\n```php\n// ❌ Vulnerable\n{{ $user->bio }}\n\n// ✅ Safe (auto-escaped)\n{{ $user->bio }}\n\n// ✅ For HTML content\n{!! Purify::clean($user->bio) !!}\n```",
+      "dalle_prompt": "Cyberpunk neon-blue security shield icon protecting code brackets, dark background with glowing purple and cyan accents, holographic shield effect, technical illustration style, clean vector art, 1080x1080, Instagram square format",
+      "captions": {
+        "long": "🔐 *Security Tip #3*\n\nRaw output itu berbahaya. Gunakan `{!! !!}` hanya untuk HTML yang sudah distrip:\n```php\n// ❌ Vulnerable\n{{ $user->bio }}\n\n// ✅ Safe (auto-escaped)\n{{ $user->bio }}\n\n// ✅ For HTML content\n{!! Purify::clean($user->bio) !!}\n```\n\n📌 #Security #SixZuper #DevSecOps",
+        "short": "🔐 *Security Tip #3*\n\nRaw output itu berbahaya. Gunakan `{!! !!}` hanya untuk HTML yang sudah distrip:\n\n📌 #Security #SixZuper #DevSecOps",
+        "cta_only": "Simpan postingan ini untuk referensi nanti! 💾\n\n📌 #Security #SixZuper #DevSecOps"
+      },
+      "media_url": "https://via.placeholder.com/1080x1080/0a0a2e/00d4ff?text=XSS+Prevention+di+Laravel"
+    },
+    {
+      "slot": "13:00",
+      "wib_time": "13:00 WIB",
+      "theme": "tech tip",
+      "slot_label": "📍 Siang ini — Tech Tip",
+      "tip_id": 13,
+      "category": "api",
+      "title": "REST API Error Format",
+      "body": "Gunakan HTTP status code yang tepat:\n- 200 — GET, PUT, PATCH (success)\n- 201 — POST (created)\n- 204 — DELETE (no content)\n- 400 — Bad request\n- 401 — Unauthorized\n- 403 — Forbidden\n- 404 — Not found\n- 409 — Conflict\n- 429 — Too many requests\n\nResponse body:\n```json\n{\"error\": \"user_not_found\", \"message\": \"User ID 123 not found\", \"code\": 404}\n```",
+      "dalle_prompt": "Minimalist API gateway illustration with request/response flow arrows, cyberpunk neon-blue color palette, dark background with circuit-like lines, isometric view, clean vector art, 1080x1080, Instagram square format",
+      "captions": {
+        "long": "🌐 *API Tip #13*\n\nGunakan HTTP status code yang tepat:\n- 200 — GET, PUT, PATCH (success)\n- 201 — POST (created)\n- 204 — DELETE (no content)\n- 400 — Bad request\n- 401 — Unauthorized\n- 403 — Forbidden\n- 404 — Not found\n- 409 — Conflict\n- 429 — Too many requests\n\nResponse body:\n```json\n{\"error\": \"user_not_found\", \"message\": \"User ID 123 not found\", \"code\": 404}\n```\n\n📌 #API #REST #SixZuper #WebDev",
+        "short": "🌐 *API Tip #13*\n\nGunakan HTTP status code yang tepat:\n\n📌 #API #REST #SixZuper #WebDev",
+        "cta_only": "Simpan postingan ini untuk referensi nanti! 💾\n\n📌 #API #REST #SixZuper #WebDev"
+      },
+      "media_url": "https://via.placeholder.com/1080x1080/0a0a2e/00d4ff?text=REST+API+Error+Format"
+    },
+    {
+      "slot": "19:00",
+      "wib_time": "19:00 WIB",
+      "theme": "tech tip",
+      "slot_label": "📍 Malam ini — Tech Tip",
+      "tip_id": 14,
+      "category": "testing",
+      "title": "Test Pyramid — Unit > Integration > E2E",
+      "body": "Fokus pada rasio:\n- 🔺 70% Unit Tests\n- 🔺 20% Integration Tests\n- 🔺 10% End-to-End Tests\n\nUnit test: cepat, isolated. Integration test: test interaksi module. E2E: test full flow (slow, flaky).",
+      "dalle_prompt": "Pyramid diagram showing test layers (unit at bottom, integration middle, E2E top) in cyberpunk neon-blue aesthetic, dark background with glowing layers, 3D isometric infographic, clean vector art, 1080x1080, Instagram square format",
+      "captions": {
+        "long": "🧪 *Testing Tip #14*\n\nFokus pada rasio:\n- 🔺 70% Unit Tests\n- 🔺 20% Integration Tests\n- 🔺 10% End-to-End Tests\n\nUnit test: cepat, isolated. Integration test: test interaksi module. E2E: test full flow (slow, flaky).\n\n📌 #Testing #TDD #SixZuper #Quality",
+        "short": "🧪 *Testing Tip #14*\n\nFokus pada rasio:\n\n📌 #Testing #TDD #SixZuper #Quality",
+        "cta_only": "Simpan postingan ini untuk referensi nanti! 💾\n\n📌 #Testing #TDD #SixZuper #Quality"
+      },
+      "media_url": "https://via.placeholder.com/1080x1080/0a0a2e/00d4ff?text=Test+Pyramid+—+Unit+>+Int"
+    }
+  ]
+}

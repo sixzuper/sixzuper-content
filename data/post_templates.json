@@ -1,0 +1,166 @@
+{
+  "tips": {
+    "laravel": {
+      "id": 1,
+      "category": "laravel",
+      "title": "Eager Loading vs Lazy Loading",
+      "body": "Gunakan `with(['relation'])` untuk menghindari N+1 query. Contoh:\n```php\n// ❌ N+1 — 100 query\n$posts = Post::all();\nforeach ($posts as $post) {\n    echo $post->author->name;\n}\n\n// ✅ Eager — 2 query\n$posts = Post::with('author')->get();\nforeach ($posts as $post) {\n    echo $post->author->name;\n}\n```"
+    },
+    "php": {
+      "id": 2,
+      "category": "php",
+      "title": "Null Coalescing Operator",
+      "body": "`??` operator adalah shortcut untuk `isset()` ternary:\n```php\n// Manual\n$name = isset($_GET['name']) ? $_GET['name'] : 'default';\n\n// Modern\n$name = $_GET['name'] ?? 'default';\n\n// Nested?\n$name = $_GET['name'] ?? $_POST['name'] ?? 'default';\n```"
+    },
+    "security": {
+      "id": 3,
+      "category": "security",
+      "title": "XSS Prevention di Laravel",
+      "body": "Raw output itu berbahaya. Gunakan `{!! !!}` hanya untuk HTML yang sudah distrip:\n```php\n// ❌ Vulnerable\n{{ $user->bio }}\n\n// ✅ Safe (auto-escaped)\n{{ $user->bio }}\n\n// ✅ For HTML content\n{!! Purify::clean($user->bio) !!}\n```"
+    },
+    "devops": {
+      "id": 4,
+      "category": "devops",
+      "title": "Git Rebase vs Merge",
+      "body": "Saat update branch:\n- `git merge` — history berantakan, tapi preserve konteks\n- `git rebase` — history linear, cocok untuk feature branches\n- `git rebase --interactive` — squashing commits sebelum merge ke main\n\nTip: gunakan `git log --graph --oneline --all` untuk visualisasi."
+    },
+    "performance": {
+      "id": 5,
+      "category": "performance",
+      "title": "OPcache for PHP",
+      "body": "Untuk production, enable OPcache di `php.ini`:\n```ini\nopcache.enable=1\nopcache.memory_consumption=128\nopcache.max_accelerated_files=7963\nopcache.revalidate_freq=60\nopcache.fast_shutdown=1\n```"
+    },
+    "architecture": {
+      "id": 6,
+      "category": "architecture",
+      "title": "Repository Pattern",
+      "body": "Pisahkan logika database dari business logic:\n```php\ninterface UserRepositoryInterface {\n    public function findById(int $id): ?User;\n    public function findByEmail(string $email): ?User;\n}\n```"
+    },
+    "tools": {
+      "id": 7,
+      "category": "tools",
+      "title": "SSH Config Shortcut",
+      "body": "Di `~/.ssh/config`:\n```\nHost stb1\n    HostName 192.168.1.12\n    User aisixzuperlabs\n    Port 22\n```\nSekarang tinggal: `ssh stb1`"
+    },
+    "general": {
+      "id": 8,
+      "category": "general",
+      "title": "Clean Code: Nama Variable Deskriptif",
+      "body": "❌ `$d` — tidak jelas\n✅ `$days_since_last_login`\n\n❌ `$data`\n✅ `$user_profile`\n\nRule of thumb: jika harus komentar, mungkin nama variabel belum jelas cukup."
+    },
+    "random": {
+      "id": 9,
+      "category": "random",
+      "title": "Git: Recover Deleted Branch",
+      "body": "Cabang terhapus bisa dikembalikan via reflog:\n```bash\ngit reflog | grep 'checkout:.*[branch_name]'\ngit checkout -b recovered_branch\n```"
+    },
+    "system_design": {
+      "id": 10,
+      "category": "system_design",
+      "title": "Database Indexing Strategy",
+      "body": "Index kolom yang sering di-WHERE clause, tapi jangan berlebihan:\n- ✅ WHERE, JOIN, ORDER BY columns\n- ✅ Unique constraints\n- ❌ Too many indexes slows write\n- ❌ Index low-cardinality columns (bool, gender) — pakai partial index\n\nGunakan `EXPLAIN ANALYZE` untuk profiling query."
+    },
+    "database": {
+      "id": 11,
+      "category": "database",
+      "title": "Redis vs Cache Database",
+      "body": "Redis bukan pengganti database — gunakan untuk:\n1. Session storage (with TTL)\n2. Cache layer (read-through pattern)\n3. Rate limiting\n4. Job queue (Redis Queue)\n5. Leaderboard (sorted sets)\n\nStrategi: cache-aside pattern\n```python\n# Read\ndata = redis.get(key)\nif not data:\n    data = db.query(...)\n    redis.setex(key, 3600, data)\n```"
+    },
+    "docker": {
+      "id": 12,
+      "category": "docker",
+      "title": "Docker Layer Optimization",
+      "body": "Susun Dockerfile dengan yang paling sering berubah di paling bawah:\n```dockerfile\n# Least change — base image, deps, config\nFROM node:20-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --only=production\n\n# More change — app code\nCOPY . .\nCMD [\"node\", \"server.js\"]\n```"
+    },
+    "api": {
+      "id": 13,
+      "category": "api",
+      "title": "REST API Error Format",
+      "body": "Gunakan HTTP status code yang tepat:\n- 200 — GET, PUT, PATCH (success)\n- 201 — POST (created)\n- 204 — DELETE (no content)\n- 400 — Bad request\n- 401 — Unauthorized\n- 403 — Forbidden\n- 404 — Not found\n- 409 — Conflict\n- 429 — Too many requests\n\nResponse body:\n```json\n{\"error\": \"user_not_found\", \"message\": \"User ID 123 not found\", \"code\": 404}\n```"
+    },
+    "testing": {
+      "id": 14,
+      "category": "testing",
+      "title": "Test Pyramid — Unit > Integration > E2E",
+      "body": "Fokus pada rasio:\n- 🔺 70% Unit Tests\n- 🔺 20% Integration Tests\n- 🔺 10% End-to-End Tests\n\nUnit test: cepat, isolated. Integration test: test interaksi module. E2E: test full flow (slow, flaky)."
+    },
+    "random2": {
+      "id": 15,
+      "category": "random",
+      "title": "Git: Cherry-pick Specific Commit",
+      "body": "Ambil commit tertentu dari branch lain:\n```bash\ngit checkout main\ngit cherry-pick abc1234  # commit hash dari feature branch\n```\nBerguna untuk backport fix ke production branch."
+    }
+  },
+  "captions": {
+    "default": {
+      "header": "💡 *Daily Tech Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 Simpan post ini untuk referensi later!\\n#TechTips #SixZuper #Developer #CodeTips"
+    },
+    "laravel": {
+      "header": "🐘 *Laravel Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #Laravel #PHP #SixZuper #DevTips"
+    },
+    "php": {
+      "header": "🐘 *PHP Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #PHP #SixZuper #CodeTips"
+    },
+    "security": {
+      "header": "🔐 *Security Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #Security #SixZuper #DevSecOps"
+    },
+    "devops": {
+      "header": "⚙️ *DevOps Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #DevOps #SixZuper #Git #CI/CD"
+    },
+    "performance": {
+      "header": "🚀 *Performance Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #Performance #SixZuper #Optimization"
+    },
+    "architecture": {
+      "header": "🏗️ *Architecture Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #Architecture #SixZuper #DesignPatterns"
+    },
+    "tools": {
+      "header": "🛠️ *Tool Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #Tools #SixZuper #DeveloperSetup"
+    },
+    "system_design": {
+      "header": "🏛️ *System Design #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #SystemDesign #SixZuper #Scalability"
+    },
+    "database": {
+      "header": "🗄️ *Database Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #Database #SQL #SixZuper #Redis"
+    },
+    "docker": {
+      "header": "🐋 *Docker Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #Docker #SixZuper #Containerization"
+    },
+    "api": {
+      "header": "🌐 *API Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #API #REST #SixZuper #WebDev"
+    },
+    "testing": {
+      "header": "🧪 *Testing Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #Testing #TDD #SixZuper #Quality"
+    },
+    "general": {
+      "header": "💡 *Daily Code Tip #{tip_id}*",
+      "body": "{body}",
+      "footer": "📌 #CodeTips #SixZuper #Developer"
+    }
+  }
+}

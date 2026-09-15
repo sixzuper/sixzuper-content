@@ -25,8 +25,10 @@ def load_env():
                 if line and not line.startswith("#") and "=" in line:
                     k, v = line.split("=", 1)
                     env[k.strip()] = v.strip()
-    # Also load OS env as fallback
-    env.update({k: v for k, v in os.environ.items() if k in ("IG_USER_ID", "IG_APP_ID", "IG_APP_SECRET", "IG_ACCESS_TOKEN", "IG_CDN_BASE")})
+    # File .env is authoritative; OS env is fallback only to avoid stale exported tokens.
+    for k, v in os.environ.items():
+        if k in ("IG_USER_ID", "IG_APP_ID", "IG_APP_SECRET", "IG_ACCESS_TOKEN", "IG_CDN_BASE") and k not in env:
+            env[k] = v
     return env
 
 def get_long_lived_token(short_token: str, app_id: str, app_secret: str) -> str:

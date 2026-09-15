@@ -10,17 +10,27 @@ from datetime import datetime, timezone
 
 QUEUE_PATH = Path.home() / "sixzuper-content" / "queue.json"
 
-def load_queue():
-    """Load the content queue from JSON."""
+def _load_queue_file():
+    """Load raw queue file content."""
     if not QUEUE_PATH.exists():
-        return []
+        return {"posts": [], "last_updated": datetime.now().isoformat()}
     with open(QUEUE_PATH, "r") as f:
         return json.load(f)
 
+def load_queue():
+    """Load the content queue from JSON."""
+    data = _load_queue_file()
+    if isinstance(data, dict):
+        return data.get("posts", [])
+    if isinstance(data, list):
+        return data
+    return []
+
 def save_queue(queue):
     """Save queue back to JSON."""
+    data = {"posts": queue, "last_updated": datetime.now().isoformat()}
     with open(QUEUE_PATH, "w") as f:
-        json.dump(queue, f, indent=2)
+        json.dump(data, f, indent=2)
 
 def add_to_queue(image_url: str, caption: str, hashtags: list, post_time: str, media_type: str = "IMAGE"):
     """

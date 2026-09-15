@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-09-12T10:11:59.791825Z",
+  "posts": [
+    {
+      "slot": "08:00",
+      "wib_time": "08:00 WIB",
+      "theme": "infra hack",
+      "slot_label": "📍 Pagi ini — Infrastructure Hack",
+      "tip_id": 7,
+      "category": "tools",
+      "title": "SSH Config Shortcut",
+      "body": "Di `~/.ssh/config`:\n```\nHost stb1\n    HostName 192.168.1.12\n    User aisixzuperlabs\n    Port 22\n```\nSekarang tinggal: `ssh stb1`",
+      "dalle_prompt": "Minimalist flat-design illustration of a developer's terminal showing SSH config shortcut, green monospace text on dark terminal background, clean vector art style, 1080x1080, Instagram square format",
+      "captions": {
+        "long": "🛠️ *Tool Tip #7*\n\nDi `~/.ssh/config`:\n```\nHost stb1\n    HostName 192.168.1.12\n    User aisixzuperlabs\n    Port 22\n```\nSekarang tinggal: `ssh stb1`\n\n📌 #Tools #SixZuper #DeveloperSetup",
+        "short": "🛠️ *Tool Tip #7*\n\nDi `~/.ssh/config`:\n```\nHost stb1\n\n📌 #Tools #SixZuper #DeveloperSetup",
+        "cta_only": "Simpan postingan ini untuk referensi nanti! 💾\n📌 #Tools #SixZuper #DeveloperSetup"
+      }
+    },
+    {
+      "slot": "13:00",
+      "wib_time": "13:00 WIB",
+      "theme": "tech tip",
+      "slot_label": "📍 Siang ini — Tech Tip",
+      "tip_id": 12,
+      "category": "docker",
+      "title": "Docker Layer Optimization",
+      "body": "Susun Dockerfile dengan yang paling sering berubah di paling bawah:\n```dockerfile\n# Least change — base image, deps, config\nFROM node:20-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --only=production\n\n# More change — app code\nCOPY . .\nCMD [\"node\", \"server.js\"]\n```",
+      "dalle_prompt": "Clean isometric illustration of Docker containers stacked in layers, showing optimized Dockerfile layer order (base image at bottom, app code on top), modern tech aesthetic, 1080x1080, Instagram square format",
+      "captions": {
+        "long": "🐋 *Docker Tip #12*\n\nSusun Dockerfile dengan yang paling sering berubah di paling bawah:\n```dockerfile\n# Least change — base image, deps, config\nFROM node:20-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --only=production\n\n# More change — app code\nCOPY . .\nCMD [\"node\", \"server.js\"]\n```\n\n📌 #Docker #SixZuper #Containerization",
+        "short": "🐋 *Docker Tip #12*\n\nSusun Dockerfile dengan yang paling sering berubah di paling bawah:\n```dockerfile\n# Least change — base image, deps, config\n\n📌 #Docker #SixZuper #Containerization",
+        "cta_only": "Simpan postingan ini untuk referensi nanti! 💾\n📌 #Docker #SixZuper #Containerization"
+      }
+    },
+    {
+      "slot": "19:00",
+      "wib_time": "19:00 WIB",
+      "theme": "tech tip",
+      "slot_label": "📍 Malam ini — Tech Tip",
+      "tip_id": 11,
+      "category": "database",
+      "title": "Redis vs Cache Database",
+      "body": "Redis bukan pengganti database — gunakan untuk:\n1. Session storage (with TTL)\n2. Cache layer (read-through pattern)\n3. Rate limiting\n4. Job queue (Redis Queue)\n5. Leaderboard (sorted sets)\n\nStrategi: cache-aside pattern\n```python\n# Read\ndata = redis.get(key)\nif not data:\n    data = db.query(...)\n    redis.setex(key, 3600, data)\n```",
+      "dalle_prompt": "Minimalist illustration comparing Redis cache layer (fast, in-memory) vs database (persistent, slower), showing cache-aside pattern with arrows, clean flat design, teal and blue color palette, 1080x1080, Instagram square format",
+      "captions": {
+        "long": "🗄️ *Database Tip #11*\n\nRedis bukan pengganti database — gunakan untuk:\n1. Session storage (with TTL)\n2. Cache layer (read-through pattern)\n3. Rate limiting\n4. Job queue (Redis Queue)\n5. Leaderboard (sorted sets)\n\nStrategi: cache-aside pattern\n```python\n# Read\ndata = redis.get(key)\nif not data:\n    data = db.query(...)\n    redis.setex(key, 3600, data)\n```\n\n📌 #Database #SQL #SixZuper #Redis",
+        "short": "🗄️ *Database Tip #11*\n\nRedis bukan pengganti database — gunakan untuk:\n1. Session storage (with TTL)\n2. Cache layer (read-through pattern)\n\n📌 #Database #SQL #SixZuper #Redis",
+        "cta_only": "Simpan postingan ini untuk referensi nanti! 💾\n📌 #Database #SQL #SixZuper #Redis"
+      }
+    }
+  ]
+}
