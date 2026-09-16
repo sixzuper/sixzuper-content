@@ -1,0 +1,29 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python runtime and generated files
+.venv/
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+
+# Runtime queue/log state (content source files stay tracked)
+logs/
+queue.json
+queue.json.bak.*
+publish_log.jsonl
+
+# Local/generated draft artifacts
+scripts/queue.json
+drafts/edu_post_*.txt
+drafts/summary_*.json
+
+# OS/editor files
+.DS_Store
+.vscode/
+.idea/
