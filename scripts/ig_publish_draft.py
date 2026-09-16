@@ -26,12 +26,14 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
+from PIL import Image, ImageDraw
 
 CONTENT_DIR = Path(__file__).resolve().parents[1]
 QUEUE_FILE = CONTENT_DIR / "queue.json"
 LOG_FILE = CONTENT_DIR / "logs" / "publish_log.jsonl"
 ENV_PATH = Path.home() / ".hermes" / ".env"
 GRAPH = "https://graph.facebook.com/v18.0"
+W, H = 1080, 1350
 
 # Default brand asset used only for the first smoke test. In production every
 # draft carries its own image_url; this constant is never used as a publishable
@@ -98,22 +100,57 @@ def build_caption(post: dict) -> tuple[str, list[str]]:
     return caption, hashtags
 
 
+def render_and_upload(post: dict) -> str|None:
+    """Auto-generate premium card + git push to GitHub CDN. Returns image_url."""
+    import subprocess, datetime as dt
+    venv_python = str(CONTENT_DIR / ".venv/bin/python3")
+    renderer = str(CONTENT_DIR / "scripts" / "render_premium_card.py")
+    media = CONTENT_DIR / "media"
+    media.mkdir(exist_ok=True)
+    ts = dt.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    fname = f"post_{post.get('id')}_{ts}.png"
+    fpath = media / fname
+
+    # Generate teks-free background (solid gradient; avoids image-model rate limits)
+    bg = Image.new("RGB", (W, H), (5, 8, 23))
+    ImageDraw.Draw(bg).rectangle([0,0,1080,540], fill=(3,12,30))
+    bg_src = media / f"_bg_{ts}.png"
+    bg.save(bg_src)
+
+    r = subprocess.run([venv_python, renderer,
+                        "--background", str(bg_src),
+                        "--output", str(fpath),
+                        "--title", (post.get("title") or "")[:50],
+                        "--body", (post.get("body") or post.get("content") or "")[:120]],
+                       capture_output=True, text=True, timeout=60)
+    if r.returncode or not fpath.exists():
+        print("[WARN] render failed:", r.stderr[:160])
+        return None
+    # git add + commit + push
+    subprocess.run(["git","add","-A"], cwd=CONTENT_DIR, check=True, capture_output=True)
+    subprocess.run(["git","commit","-m",f"auto: premium visual post #{post.get('id')}"],
+                   cwd=CONTENT_DIR, capture_output=True, text=True)
+    p = subprocess.run(["git","push","origin","main"], cwd=CONTENT_DIR, capture_output=True, text=True, timeout=60)
+    if p.returncode != 0:
+        print("[WARN] git push failed:", p.stderr[:120])
+        return None
+    return f"https://raw.githubusercontent.com/sixzuper/sixzuper-content/main/media/{fname}"
+
+
 def publish(post: dict, env: dict, dry_run: bool) -> dict:
     caption, _hashtags = build_caption(post)
 
     # Fail closed: every publishable draft must carry a real, public HTTPS image.
     candidate_url = post.get("image_url") or post.get("media_url") or ""
     if not candidate_url or "placeholder.com" in candidate_url:
-        return {
-            "error": {
-                "message": (
-                    "No approved branded CDN image. Generate the premium visual with "
-                    "render_premium_card.py, upload the PNG to the GitHub repo, then set "
-                    "image_url before publishing."
-                )
-            }
-        }
+        print("[INFO] No branded image; auto-generating premium card + GitHub CDN...")
+        candidate_url = render_and_upload(post)
+        if not candidate_url:
+            return {"error": {"message":
+                "Could not generate branded image. Generate the premium visual manually "
+                "with render_premium_card.py, upload PNG to GitHub media/ folder, then set image_url."}}
     if not candidate_url.startswith("https://"):
+        return {"error": {"message": "image_url must be a public HTTPS URL."}}
         return {"error": {"message": "image_url must be a public HTTPS URL."}}
     image_url = candidate_url
 

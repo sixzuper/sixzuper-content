@@ -20,6 +20,23 @@ def font(path: str, size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(path, size)
 
 
+def wrap(text: str, fontobj, max_width: int, draw: ImageDraw.ImageDraw) -> str:
+    """Word-wrap multiline text to fit inside max_width (pixels)."""
+    import textwrap
+    lines_out = []
+    for raw_line in text.split("\n"):
+        wrapped = textwrap.wrap(raw_line, width=120, break_long_words=False, break_on_hyphens=True)
+        if not wrapped:
+            lines_out.append("")
+            continue
+        for w in wrapped:
+            # measure iteratively; reduce if needed
+            while draw.textlength(w, font=fontobj) > max_width and len(w.split()) > 1:
+                w = " ".join(w.split()[:-1])
+            lines_out.append(w)
+    return "\n".join(lines_out)
+
+
 def rounded(draw: ImageDraw.ImageDraw, xy, radius, fill, outline=None, width=1):
     draw.rounded_rectangle(xy, radius=radius, fill=fill, outline=outline, width=width)
 
@@ -46,7 +63,7 @@ def gradient_overlay() -> Image.Image:
     return layer
 
 
-def draw_card(source: Path, output: Path) -> None:
+def draw_card(source: Path, output: Path, title: str = "", body: str = "") -> None:
     canvas = fit_bg(source)
     canvas.alpha_composite(gradient_overlay())
     draw = ImageDraw.Draw(canvas)
@@ -59,18 +76,22 @@ def draw_card(source: Path, output: Path) -> None:
 
     # Top rule and brand marker
     draw.line((72, 74, 1008, 74), fill=(38, 85, 125, 180), width=2)
-    rounded(draw, (72, 108, 318, 158), 25, fill=(5, 25, 48, 235), outline=(0, 212, 255, 210), width=2)
+    rounded(draw, (72, 108, 318, 158), 25, fill=(5, 25, 48, 235), outline=cyan, width=2)
     draw.text((96, 119), "SIXZUPER  /  LABS", font=font(BOLD, 19), fill=cyan)
-    draw.text((72, 188), "API  /  BACKEND", font=font(BOLD, 22), fill=muted)
+    draw.text((72, 188), "EDUCATIONAL CARD", font=font(BOLD, 22), fill=muted)
 
-    # Main headline
-    draw.text((72, 242), "REST API", font=font(BOLD, 83), fill=white)
-    draw.text((72, 334), "Error Format", font=font(BOLD, 83), fill=white)
+    # Main headline (dynamic title)
+    title_lines = wrap(title if title else "REST API", font(BOLD, 83), 900, draw).split("\n")[:2]
+    if not title:
+        title_lines = ["REST API", "Error Format"]
+    draw.text((72, 242), title_lines[0], font=font(BOLD, 83), fill=white)
+    if len(title_lines) > 1:
+        draw.text((72, 334), title_lines[1], font=font(BOLD, 83), fill=white)
     draw.rounded_rectangle((72, 448, 234, 456), radius=4, fill=cyan)
 
-    # Supporting message
-    body = "Status code yang jelas\nmembuat API lebih mudah\ndi-debug."
-    draw.multiline_text((72, 490), body, font=font(REGULAR, 35), fill=(222, 236, 249, 255), spacing=12)
+    # Supporting message (dynamic body)
+    body_wrapped = wrap(body if body else "Gunakan HTTP status code yang tepat untuk API yang predictable.", font(REGULAR, 35), 900, draw)
+    draw.multiline_text((72, 490), body_wrapped, font=font(REGULAR, 35), fill=(222, 236, 249, 255), spacing=12)
 
     # Status chips
     chips = [("200", "SUCCESS", cyan), ("404", "NOT FOUND", violet), ("429", "RATE LIMIT", (255, 180, 61, 255))]
@@ -102,10 +123,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--background", required=True)
     ap.add_argument("--output", required=True)
+    ap.add_argument("--title", default="")
+    ap.add_argument("--body", default="")
     args = ap.parse_args()
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    draw_card(Path(args.background), output)
+    draw_card(Path(args.background), output, args.title, args.body)
     print(output)
 
 
