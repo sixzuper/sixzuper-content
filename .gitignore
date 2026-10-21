@@ -17,6 +17,11 @@ logs/
 queue.json
 queue.json.bak.*
 publish_log.jsonl
+# IG publish idempotency state (private local runtime)
+data/*-once-state.json
+data/*-once.lock
+data/ig-publish.lock
+data/ig-publish-pending/
 
 # Local/generated draft artifacts
 scripts/queue.json

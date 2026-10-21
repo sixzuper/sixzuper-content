@@ -1,227 +1,108 @@
 #!/usr/bin/env python3
-"""
-SixZuper IG Daily Publish Script
-Main entry point for cron job.
-1. Check queue for due posts
-2. Generate new content if queue is low
-3. Publish due posts
-4. Report results to Telegram
-"""
+"""Fail-closed scheduled IG publisher. No content generation or implicit dry-run."""
+import fcntl
 import json
-import sys
 import os
-import requests
-from pathlib import Path
+import sys
+import tempfile
+import time
 from datetime import datetime, timezone
+from pathlib import Path
+from urllib.parse import urlparse
+import requests
 
-# Setup path
-SCRIPTS_DIR = Path(__file__).parent
-sys.path.insert(0, str(SCRIPTS_DIR))
-os.chdir(SCRIPTS_DIR)
+ROOT = Path(__file__).resolve().parents[1]
+QUEUE = ROOT/'queue.json'
+ENV = Path.home()/'.hermes/.env'
+LOCK = ROOT/'data/ig-publish.lock'
+PENDING = ROOT/'data/ig-publish-pending'
+GRAPH = 'https://graph.facebook.com/v24.0'
 
-# Dry-run mode flags
-DRY_RUN = False
-TOKEN_VALID = False
-
-def load_env():
-    """Load .env file."""
-    env_path = Path.home() / ".hermes" / ".env"
-    env = {}
-    if env_path.exists():
-        with open(env_path) as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    k, v = line.split("=", 1)
-                    env[k.strip()] = v.strip()
-    return env
-
-def is_token_valid(env):
-    """Check if IG access token is valid by making a simple API call."""
-    global TOKEN_VALID, DRY_RUN
-    IG_USER_ID = env.get("IG_USER_ID", "")
-    ACCESS_TOKEN = env.get("IG_ACCESS_TOKEN", "")
-    
-    if not IG_USER_ID or not ACCESS_TOKEN:
-        log("Missing IG_USER_ID or IG_ACCESS_TOKEN", "WARN")
-        TOKEN_VALID = False
-        DRY_RUN = True
-        return False
-    
+def atomic_json(path, value):
+    path.parent.mkdir(parents=True,exist_ok=True)
+    fd,tmp=tempfile.mkstemp(prefix='.ig-',dir=path.parent)
     try:
-        url = f"https://graph.facebook.com/v18.0/{IG_USER_ID}"
-        params = {"access_token": ACCESS_TOKEN, "fields": "id,username"}
-        resp = requests.get(url, params=params, timeout=10)
-        data = resp.json()
-        
-        if resp.status_code == 200 and "id" in data:
-            TOKEN_VALID = True
-            DRY_RUN = False
-            log(f"✅ Token valid for @{data.get('username')} (ID: {data.get('id')})")
-            return True
-        else:
-            error = data.get("error", {}).get("message", "Unknown error")
-            log(f"❌ Token invalid: {error}", "WARN")
-            TOKEN_VALID = False
-            DRY_RUN = True
-            return False
-    except Exception as e:
-        log(f"Token check failed: {e}", "WARN")
-        TOKEN_VALID = False
-        DRY_RUN = True
-        return False
+        with os.fdopen(fd,'w') as f:
+            json.dump(value,f,ensure_ascii=False,indent=2);f.write('\n');f.flush();os.fsync(f.fileno())
+        os.chmod(tmp,0o600);os.replace(tmp,path)
+    finally:
+        if os.path.exists(tmp):os.unlink(tmp)
 
-def log(message, level="INFO"):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{timestamp}] [{level}] {message}")
+def graph(method,path,token,**kw):
+    r=requests.request(method,GRAPH+'/'+path,headers={'Authorization':'Bearer '+token},timeout=40,**kw)
+    try: j=r.json()
+    except ValueError: raise RuntimeError('Meta returned non-JSON response')
+    if not r.ok or j.get('error'):
+        e=j.get('error') or {}
+        raise RuntimeError('Meta HTTP %s code %s: %s'%(r.status_code,e.get('code'),str(e.get('message',''))[:130]))
+    return j
 
-def send_telegram_message(message, env):
-    """Send a message to Telegram home channel."""
-    import requests
-    bot_token = env.get("TELEGRAM_BOT_TOKEN", "")
-    chat_id = env.get("TELEGRAM_HOME_CHANNEL", "")
-    
-    if bot_token and chat_id:
-        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-        data = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
-        try:
-            resp = requests.post(url, json=data, timeout=10)
-            return resp.status_code == 200
-        except Exception as e:
-            log(f"Telegram error: {e}", "WARN")
-    return False
-
-def get_todays_tip():
-    """Get today's tech tip from the tip bank."""
-    tips = [
-        "Gunakan Queue Worker untuk task yang lambat — jangan blokir request!",
-        "Cache hasil query database, jangan query berulang kali.",
-        "Gunakan .env untuk semua konfigurasi — jangan hardcoded.",
-        "Indexing database itu wajib — tanpa index, query jadi lambat.",
-        "Pakai dependency injection untuk testable code.",
-        "Rate limiting mencegah abuse — gunakan Redis + token bucket.",
-        "Gunakan CDN untuk static assets — lebih cepat & hemat bandwidth.",
-        "Error handling yang baik = logging + alert + graceful degradation.",
-        "Database connection pooling hindari 'too many connections'.",
-        "Use prepared statements untuk cegah SQL injection.",
-        "Containerize apps dengan Docker — reproducible & scalable.",
-        "Set 2FA everywhere — especially email & cloud accounts.",
-        "Backup rutin: 3-2-1 rule (3 copies, 2 media, 1 offsite).",
-        "Log rotation penting — disk penuh = server down.",
-        "Use HTTPS always — Let's Encrypt untuk SSL gratis.",
-        "Gunakan API versioning (/api/v1/) untuk backward compatibility.",
-        "Rate your endpoints — latency < 200ms untuk API yang bagus.",
-        "Don't trust user input — sanitize & validate semua data.",
-        "Use circuit breaker pattern untuk microservice resilience.",
-        "Monitor dengan health checks — proactivity vs reactivity."
-    ]
-    
-    day_of_year = datetime.now().timetuple().tm_yday
-    return tips[day_of_year % len(tips)]
-
-def generate_daily_post():
-    """Generate today's post using p5.js template."""
-    log("Generating daily post with p5.js template...")
-    # This would normally run the p5.js export headless
-    # For now, we'll use a placeholder that generates the caption
-    
-    tip = get_todays_tip()
-    caption = f"💡 SixZuper Daily Tech Tip\n\n{tip}\n\n#Laravel #WebDev #TechTips #SixzuperLabs #DailyTip"
-    
-    # In a real implementation, this would:
-    # 1. Launch p5.js canvas headless via Puppeteer
-    # 2. Trigger canvas redraw
-    # 3. Export canvas to PNG
-    # 4. Upload to CDN
-    
-    # For now, simulate by logging
-    log(f"Generated tip: {tip}")
-    return caption
-
-def publish_due_posts(env):
-    """Check queue for due posts and publish them."""
-    from queue_manager import get_due_posts, mark_published, mark_failed
-    
-    due = get_due_posts()
-    if not due:
-        log("No posts due.")
-        return 0
-    
-    if DRY_RUN:
-        log("DRY RUN MODE - simulating publish for {len(due)} post(s)")
-        # Simulate publishing
-        published_count = 0
-        for post in due:
-            log(f"[SIMULATE] Would publish: {post['id']}")
-            log(f"  - Image: {post['image_url']}")
-            log(f"  - Caption: {post['caption'][:50]}...")
-            mark_published(post["id"], {"ig_media_id": "dry-run", "status": "simulated"})
-            published_count += 1
-        return published_count
-    
-    published_count = 0
-    for post in due:
-        full_caption = post["caption"] + "\n\n" + " ".join(post["hashtags"])
-        try:
-            from ig_publisher import post_to_instagram
-            result = post_to_instagram(post["image_url"], full_caption, post.get("media_type", "IMAGE"))
-            mark_published(post["id"], result)
-            log(f"Published: {post['id']} → IG ID {result.get('ig_media_id')}")
-            published_count += 1
-        except Exception as e:
-            mark_failed(post["id"], str(e))
-            log(f"Failed to publish {post['id']}: {e}", "ERROR")
-    
-    return published_count
+def due_posts(posts,now=None):
+    now=now or datetime.now(timezone.utc)
+    due=[]
+    for p in posts:
+        if p.get('status')!='scheduled':continue
+        stamp=p.get('post_time')
+        if not stamp:raise ValueError('Scheduled item %s has no post_time'%p.get('id'))
+        when=datetime.fromisoformat(stamp)
+        if when.tzinfo is None:raise ValueError('Scheduled item %s has timezone-naive post_time'%p.get('id'))
+        if when<=now:due.append(p)
+    return due
 
 def main():
-    log("=" * 60)
-    log("SixZuper IG Daily Publish - Started")
-    log("=" * 60)
-    
-    env = load_env()
-    
-    # 1. Check token validity
-    is_token_valid(env)
-    
-    if DRY_RUN:
-        log("⚠️ Running in DRY RUN mode - token not valid/approved yet", "WARN")
-    
-    # 2. Generate today's post content
-    try:
-        caption = generate_daily_post()
-        log(f"Daily tip generated: {caption[:50]}...")
-    except Exception as e:
-        log(f"Content generation error: {e}", "ERROR")
-        caption = "💡 SixZuper Daily Tech Tip\n\nCheck our latest post!\n\n#SixzuperLabs"
-    
-    # 3. Check and publish due posts from queue
-    published = 0
-    try:
-        published = publish_due_posts(env)
-        if published:
-            log(f"Processed {published} post(s)")
-    except Exception as e:
-        log(f"Publish error: {e}", "ERROR")
-    
-    # 4. Send completion report to Telegram
-    status_emoji = "🟡" if DRY_RUN else "✅"
-    mode_text = "DRY RUN (token pending approval)" if DRY_RUN else "Live IG API"
-    
-    report = f"""📸 *SixZuper IG Auto-Publish Report*
-🗓️ Date: {datetime.now().strftime('%Y-%m-%d %H:%M')} WIB
-{status_emoji} Status: {'Mode: ' + mode_text}
-📝 Today's tip: {get_todays_tip()[:50]}...
-📬 Posts published: {published}
+    LOCK.parent.mkdir(parents=True,exist_ok=True)
+    with open(LOCK,'w') as f:
+        fcntl.flock(f,fcntl.LOCK_EX)
+        q=json.loads(QUEUE.read_text());posts=q['posts']
+        due=due_posts(posts)
+        if not due:return 0  # routine green is silent; no auth API needed
+        env=dict(line.split('=',1) for line in ENV.read_text().splitlines() if '=' in line and not line.startswith('#'))
+        ig=env['IG_USER_ID'];token=env['IG_ACCESS_TOKEN']
+        identity=graph('GET',ig,token,params={'fields':'id,username'})
+        if identity.get('id')!=ig or identity.get('username')!='sixzuper':raise RuntimeError('Wrong/invalid IG identity')
+        for p in due:
+            pid=str(p['id']);url=p.get('image_url','')
+            parts=urlparse(url)
+            if parts.scheme!='https' or not parts.netloc or 'placeholder' in parts.netloc:
+                raise RuntimeError('Item %s lacks public HTTPS media'%pid)
+            caption=p.get('caption','').strip()
+            if not caption:raise RuntimeError('Item %s has empty caption'%pid)
+            tags=p.get('hashtags') or []
+            if tags: caption+='\n\n'+' '.join(tags)
+            if p.get('media_type','IMAGE')!='IMAGE':raise RuntimeError('Only IMAGE supported by safe runner')
+            latest=graph('GET',ig+'/media',token,params={'fields':'id,caption,permalink,timestamp,media_type','limit':50})
+            found=[m for m in latest.get('data',[]) if m.get('caption')==caption]
+            if len(found)>1:raise RuntimeError('Duplicate remote caption; manual review needed')
+            if found:
+                media=found[0]
+            else:
+                pending=PENDING/(pid.replace('/','_')+'.json')
+                if pending.exists():raise RuntimeError('Item %s has prior ambiguous attempt; inspect before retry'%pid)
+                r=requests.get(url,timeout=30,stream=True)
+                try:
+                    if not(r.status_code==200 and r.headers.get('Content-Type','').startswith(('image/png','image/jpeg'))):
+                        raise RuntimeError('Item %s image not public PNG/JPEG'%pid)
+                finally:r.close()
+                c=graph('POST',ig+'/media',token,data={'image_url':url,'caption':caption})
+                atomic_json(pending,{'id':pid,'creation_id':c['id'],'image_url':url,'started_at':datetime.now(timezone.utc).isoformat()})
+                for _ in range(8):
+                    status=graph('GET',c['id'],token,params={'fields':'status_code'})
+                    if status.get('status_code')=='FINISHED':break
+                    if status.get('status_code')=='ERROR':raise RuntimeError('Item %s container failed'%pid)
+                    time.sleep(4)
+                else:raise RuntimeError('Item %s container not ready; no publish attempt'%pid)
+                result=graph('POST',ig+'/media_publish',token,data={'creation_id':c['id']})
+                media=graph('GET',result['id'],token,params={'fields':'id,caption,permalink,timestamp,media_type'})
+            if not(media.get('id') and media.get('permalink') and media.get('caption')==caption):
+                raise RuntimeError('Item %s media readback mismatch'%pid)
+            p.update({'status':'published','ig_media_id':media['id'],'permalink':media['permalink'],'published_at':media.get('timestamp')})
+            q['last_updated']=datetime.now(timezone.utc).isoformat()
+            atomic_json(QUEUE,q)
+            print('verified',pid,media['id'],media['permalink'])
+        return 0
 
-_Auto-generated by Kilua — SixZuper Labs AI Agent_"""
-    
-    send_telegram_message(report, env)
-    log("Report sent to Telegram")
-    
-    log("=" * 60)
-    log("SixZuper IG Daily Publish - Complete")
-    log("=" * 60)
-
-if __name__ == "__main__":
-    main()
+if __name__=='__main__':
+    try:sys.exit(main())
+    except Exception as e:
+        print('IG publish blocked:',e,file=sys.stderr)
+        sys.exit(1)
