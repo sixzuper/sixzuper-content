@@ -12,7 +12,7 @@
 - Hermes cron `0ac8f6006e1e` pukul 05.00 WIB hanya menghasilkan **teks tiga draft ke topic draft**. Tidak menulis queue/gambar, tidak membuat jadwal IG.
 - Root `queue.json`: 36 `draft_ready`, 0 `scheduled`, tidak ada draft_ready dengan gambar publik. Draft lama jangan langsung dijadwalkan massal; beberapa entri historis `published` mempunyai ID `dry-run` palsu.
 - Runner `scripts/ig_daily_publish.py` saat ini aman terhadap dry-run tetapi **berbicara dengan Facebook Graph**, sedangkan token Page Facebook kini 190/463. **Jangan aktifkan cron untuk runner ini.**
-- Token IGAAT yang dipakai pada post kedua **tidak disimpan di `.env`**; umur tepat dan mekanisme refresh belum diverifikasi pada mesin. Kredensial Git remote masih perlu dijauhkan dari URL sebelum dipakai oleh cron berulang.
+- Token Instagram Login yang diizinkan pemilik **sudah terpasang privat** di `~/.hermes/.env` (mode `0600`); pembacaan balik `/me` dan `/me/media` cocok dengan akun `@sixzuper`. Masa berlaku, izin publish token ini, dan refresh belum terverifikasi; cron publish masih nonaktif. Kredensial Git remote masih perlu dijauhkan dari URL sebelum dipakai oleh cron berulang.
 
 ## Pemeriksaan cepat (read-only)
 ```bash
