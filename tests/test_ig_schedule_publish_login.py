@@ -85,6 +85,30 @@ class PublisherTests(unittest.TestCase):
                 m.main(NOW)
         self.assertTrue((self.pending/'20261021-13.json').exists())
         self.assertEqual(json.loads(self.q.read_text())['posts'][0]['status'], 'scheduled')
+    def test_invalid_token_keeps_queue_scheduled(self):
+        with patch.object(m, 'config', return_value=('IGAATfake','123','sixzuper')), patch.object(m, 'api', side_effect=RuntimeError('Meta HTTP 400 code 190')):
+            with self.assertRaisesRegex(RuntimeError, 'code 190'):
+                m.main(NOW)
+        self.assertEqual(json.loads(self.q.read_text())['posts'][0]['status'], 'scheduled')
+        self.assertFalse((self.pending/'20261021-13.json').exists())
+
+    def test_cdn_failure_never_posts(self):
+        def api(method, path, token, **kwargs):
+            if method == 'POST': self.fail('No POST for a broken CDN')
+            if path == 'me': return {'user_id': '123', 'username': 'sixzuper', 'account_type': 'BUSINESS'}
+            if path == 'me/media': return {'data': []}
+            self.fail('Unexpected call '+path)
+        with patch.object(m,'config',return_value=('IGAATfake','123','sixzuper')), patch.object(m,'api',side_effect=api), patch.object(m,'verify_media',side_effect=RuntimeError('Public JPEG unavailable')):
+            with self.assertRaisesRegex(RuntimeError,'Public JPEG unavailable'):
+                m.main(NOW)
+        self.assertEqual(json.loads(self.q.read_text())['posts'][0]['status'], 'scheduled')
+        self.assertFalse((self.pending/'20261021-13.json').exists())
+
+    def test_readback_mismatch_rejected(self):
+        remote={'id':'12345','caption':'wrong #SZP2026102113','permalink':'https://www.instagram.com/p/test/','media_type':'IMAGE'}
+        with patch.object(m,'api',return_value=remote):
+            with self.assertRaisesRegex(RuntimeError,'readback mismatch'):
+                m.readback('IGAATfake',remote,MARKER,CAPTION)
 
 
 if __name__ == '__main__':

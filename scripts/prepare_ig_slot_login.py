@@ -142,7 +142,8 @@ def run(source, dry_run=False, now=None):
         if dry_run:
             return str(path)
         url,digest = publish_asset(path)
-        q['posts'].append({**d,'image_url':url,'image_sha256':digest,'status':'scheduled'})
+        q['posts'].append({**d,'source_draft':str(source.resolve().relative_to(ROOT)),
+                           'image_url':url,'image_sha256':digest,'status':'scheduled'})
         q['last_updated'] = datetime.now(WIB).isoformat()
         atomic_queue(q)
     return d['id']

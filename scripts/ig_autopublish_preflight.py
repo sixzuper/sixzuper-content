@@ -24,8 +24,11 @@ def run():
     cron=json.loads((HOME/'.hermes/cron/jobs.json').read_text());jobs=cron.get('jobs',cron) if isinstance(cron,dict) else cron
     active=[j for j in jobs if j.get('enabled')]
     results['draft_cron_present']=any('sixzuper-ig-draft' in str(j.get('script')) for j in active)
-    results['publisher_cron_present']=any('ig_daily_publish' in json.dumps(j) or 'ig-scheduled-publish' in json.dumps(j) for j in active)
-    results['producer_writes_queue']=False  # set only when verified by an actual integration test
+    results['publisher_cron_present']=any('ig_daily_publish' in json.dumps(j) or 'sixzuper-ig-publish-one-slot.py' in json.dumps(j) for j in active)
+    results['producer_writes_queue']=bool(scheduled) and all(
+        (ROOT / p.get('source_draft','')).is_file() and
+        p.get('source_draft','').startswith('content/') and
+        bool(p.get('image_sha256')) for p in scheduled)
     remote=subprocess.run(['git','remote','get-url','origin'],cwd=ROOT,text=True,capture_output=True)
     u=urlparse(remote.stdout.strip())
     results['git_remote_without_embedded_credentials']=remote.returncode==0 and not(u.username or u.password)

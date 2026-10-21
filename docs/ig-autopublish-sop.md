@@ -1,6 +1,6 @@
 # SOP — SixZuper Labs Instagram auto-publish (Instagram Login)
 
-**Status: RANCANGAN OPERASIONAL, BELUM DIAKTIFKAN.** Diperiksa 2026-10-21 WIB. Dokumen ini tidak menjadi bukti bahwa pipeline otomatis sudah berjalan. Dua publish manual terverifikasi: `18121789357942379` (Facebook Login, token Page kini kedaluwarsa) dan `18126478117823515` (Instagram Login, `https://www.instagram.com/p/Devgyk_gWDj/`). Jalur produksi yang dipilih adalah **Instagram Login** (`graph.instagram.com`), bukan mencampurkan token IGAAT dengan publisher Facebook `graph.facebook.com`.
+**Status: UJI SATU SLOT DIJADWALKAN, BELUM TERBUKTI TERBIT OTOMATIS.** Diperiksa 2026-10-21 WIB. Dua publish manual terverifikasi: `18121789357942379` (Facebook Login, token Page kini kedaluwarsa) dan `18126478117823515` (Instagram Login, `https://www.instagram.com/p/Devgyk_gWDj/`). Jalur produksi yang dipilih adalah **Instagram Login** (`graph.instagram.com`), bukan mencampurkan token IGAAT dengan publisher Facebook `graph.facebook.com`. Job producer satu-kali `f63fc3d2ab2d` dijadwalkan 12.00 WIB dan publisher satu-kali `3589c4187527` 13.00 WIB; keduanya belum menjadi bukti post sebelum Graph readback selesai.
 
 ## Sasaran dan batas
 - Tiga slot maksimal per hari: **08.00, 13.00, 19.00 WIB**; unik `YYYYMMDD-slot`, tidak menumpuk post lama ke slot baru.
@@ -12,7 +12,7 @@
 - Hermes cron `0ac8f6006e1e` pukul 05.00 WIB hanya menghasilkan **teks tiga draft ke topic draft**. Tidak menulis queue/gambar, tidak membuat jadwal IG.
 - Root `queue.json`: 36 `draft_ready`, 0 `scheduled`, tidak ada draft_ready dengan gambar publik. Draft lama jangan langsung dijadwalkan massal; beberapa entri historis `published` mempunyai ID `dry-run` palsu.
 - Runner `scripts/ig_daily_publish.py` saat ini aman terhadap dry-run tetapi **berbicara dengan Facebook Graph**, sedangkan token Page Facebook kini 190/463. **Jangan aktifkan cron untuk runner ini.**
-- Token Instagram Login yang diizinkan pemilik **sudah terpasang privat** di `~/.hermes/.env` (mode `0600`); pembacaan balik `/me` dan `/me/media` cocok dengan akun `@sixzuper`. Masa berlaku, izin publish token ini, dan refresh belum terverifikasi; cron publish masih nonaktif. Kredensial Git remote masih perlu dijauhkan dari URL sebelum dipakai oleh cron berulang.
+- Token Instagram Login yang diizinkan pemilik **sudah terpasang privat** di `~/.hermes/.env` (mode `0600`); pembacaan balik `/me`, `/me/media`, dan `/content_publishing_limit` cocok dengan `@sixzuper`. Refresh live di `graph.instagram.com/refresh_access_token` berhasil; token baru diverifikasi sebelum penulisan atomik, `expires_in` Meta dicatat sebagai `IG_INSTAGRAM_LOGIN_EXPIRES_AT` (2026-12-20 02:24 UTC). Job watchdog `ef736417ec1e` pukul 03.10 WIB diam saat aman dan refresh pada umur ≥30 hari. Kredensial Git remote sudah dikeluarkan dari URL; credential helper diverifikasi membaca remote. Ini belum membuktikan job publish 13.00 berhasil.
 
 ## Pemeriksaan cepat (read-only)
 ```bash
