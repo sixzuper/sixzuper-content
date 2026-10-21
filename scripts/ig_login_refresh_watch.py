@@ -2,7 +2,7 @@
 """Silent IG Login expiry watcher; refresh after age 30d, fail closed on risk."""
 import sys
 from datetime import datetime, timedelta, timezone
-from ig_login_refresh import ENV, parse, refresh
+from ig_login_refresh import ENV, parse, refresh, request, API
 
 
 def check(now=None):
@@ -17,6 +17,13 @@ def check(now=None):
         raise RuntimeError('Token lifetime timezone missing')
     if now>=end:
         raise RuntimeError('Instagram token expired; publishing must stop')
+    token=values.get('IG_INSTAGRAM_LOGIN_TOKEN','')
+    if not token.startswith('IGAAT'):
+        raise RuntimeError('Instagram Login token missing')
+    who=request(API+'/v24.0/me',headers={'Authorization':'Bearer '+token},
+                params={'fields':'user_id,username'})
+    if str(who.get('user_id'))!=values.get('IG_USER_ID') or who.get('username')!=values.get('IG_USERNAME'):
+        raise RuntimeError('Instagram token invalid or wrong account')
     if now-issued>=timedelta(days=30):
         refresh()
         return
