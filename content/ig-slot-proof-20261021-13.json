@@ -1,0 +1,10 @@
+{
+  "id": "20261021-13",
+  "post_time": "2026-10-21T13:00:00+07:00",
+  "title": "STB atau Mini PC? Ukur dulu",
+  "card_title": "UKUR DULU, BARU UPGRADE",
+  "card_lines": ["STB: mulai home lab kecil", "Pantau RAM • beban • layanan", "Mini PC: naik kelas saat perlu"],
+  "caption": "STB bekas cukup untuk memulai home lab kecil: belajar SSH, menjalankan satu layanan ringan, dan mencatat apa yang benar-benar dipakai. Tidak perlu langsung pindah ke Mini PC hanya karena terlihat lebih keren.\n\nSelama beberapa hari, pantau penggunaan RAM, beban proses, ruang penyimpanan, serta apakah layanan sering berhenti. Kalau akses mulai lambat atau kebutuhan VM bertambah, catatan itu membantu menentukan kapasitas perangkat berikutnya. Mini PC dengan Proxmox VE bisa menjadi langkah berikutnya untuk memisahkan beberapa VM atau container, tetapi tetap perlu memperhitungkan RAM, penyimpanan, dan backup.\n\nAnalogi sederhananya: STB adalah meja latihan; Mini PC adalah ruang kerja yang lebih luas. Pindah setelah tahu apa yang sudah tidak muat, bukan sebelum mencoba. Baca post berikutnya untuk cara memantau home lab dari terminal.\n\n#SZP2026102113 #SixZuperLabs #HomeLab #STB #MiniPC #Proxmox #Linux\n— SixZuper Labs • powered by Kilua",
+  "media_type": "IMAGE",
+  "status": "draft_ready"
+}
