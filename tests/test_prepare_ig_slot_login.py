@@ -60,6 +60,23 @@ class PrepareTests(unittest.TestCase):
             self.assertEqual([p['status'] for p in posts],['scheduled']*3)
             self.assertEqual([p['id'] for p in posts],['20261022-08','20261022-13','20261022-19'])
 
+    def test_batch_reuses_committed_assets_after_failed_cdn_read(self):
+        import hashlib
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);path=root/'media/a.jpg';path.parent.mkdir();path.write_bytes(b'jpeg')
+            remote_sha='f'*40
+            def git(*args):
+                if args[:2]==('remote','get-url'):return 'https://github.com/sixzuper/sixzuper-content.git'
+                if args[:3]==('diff','--cached','--name-only'):return ''
+                if args[:2]==('ls-files','--error-unmatch'):return 'media/a.jpg'
+                if args[:2]==('rev-parse','HEAD'):return remote_sha
+                if args[:2]==('ls-remote','origin'):return remote_sha+'\trefs/heads/main'
+                if args[0]=='commit':raise AssertionError('Must not commit unchanged assets')
+                return ''
+            response=type('R',(),{'status_code':200,'headers':{'Content-Type':'image/jpeg'},'content':b'jpeg'})()
+            with patch.object(m,'ROOT',root),patch.object(m,'git',side_effect=git),patch.object(m.requests,'get',return_value=response):
+                self.assertEqual(m.publish_assets([path]),[(m.REPO+remote_sha+'/media/a.jpg',hashlib.sha256(b'jpeg').hexdigest())])
+
     def test_batch_cdn_failure_does_not_schedule_any_slot(self):
         tomorrow=datetime(2026,10,22,5,15,tzinfo=WIB)
         with tempfile.TemporaryDirectory() as td:

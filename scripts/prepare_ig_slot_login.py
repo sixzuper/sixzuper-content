@@ -120,9 +120,14 @@ def publish_assets(paths):
     names=[str(path.relative_to(ROOT)) for path in paths]
     git('add','--',*names)
     staged=git('diff','--cached','--name-only').splitlines()
-    if sorted(staged)!=sorted(names):
-        raise RuntimeError('Unexpected staged files or unchanged media; refuse to commit')
-    git('commit','-m','media: scheduled IG daily batch','--',*names)
+    if sorted(staged)==sorted(names):
+        git('commit','-m','media: scheduled IG daily batch','--',*names)
+    elif not staged:
+        # A previous run may have pushed all assets, then failed CDN verification.
+        for name in names:
+            git('ls-files','--error-unmatch','--',name)
+    else:
+        raise RuntimeError('Unexpected staged files or partial media; refuse to commit')
     sha=git('rev-parse','HEAD')
     git('push','origin','main')
     if git('ls-remote','origin','refs/heads/main').split()[0]!=sha:

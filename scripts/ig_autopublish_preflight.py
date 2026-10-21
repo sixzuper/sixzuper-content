@@ -23,8 +23,8 @@ def run():
         bool(p.get('caption')) for p in scheduled)
     cron=json.loads((HOME/'.hermes/cron/jobs.json').read_text());jobs=cron.get('jobs',cron) if isinstance(cron,dict) else cron
     active=[j for j in jobs if j.get('enabled')]
-    results['draft_cron_present']=any('sixzuper-ig-draft' in str(j.get('script')) for j in active)
-    results['publisher_cron_present']=any('ig_daily_publish' in json.dumps(j) or 'sixzuper-ig-publish-one-slot.py' in json.dumps(j) for j in active)
+    results['daily_producer_cron_present']=any(j.get('script')=='sixzuper-ig-produce-daily.py' and j.get('no_agent') for j in active)
+    results['publisher_cron_present']=any(j.get('script')=='sixzuper-ig-publish-daily.py' and j.get('no_agent') for j in active)
     results['producer_writes_queue']=bool(scheduled) and all(
         (ROOT / p.get('source_draft','')).is_file() and
         p.get('source_draft','').startswith(('content/', 'data/ig-generated/')) and
@@ -34,7 +34,16 @@ def run():
     results['git_remote_without_embedded_credentials']=remote.returncode==0 and not(u.username or u.password)
     results['ig_login_runner_present']=(ROOT/'scripts/ig_schedule_publish_login.py').is_file()
     for gate,ok in results.items():print(('PASS' if ok else 'BLOCK')+' '+gate)
-    print('READY' if all(results.values()) else 'NOT_READY: no automatic IG publish activation')
-    return 0 if all(results.values()) else 2
+    if all(results.values()):
+        print('READY: daily batch scheduled (not proof of publication)')
+        return 0
+    cron_active=all(results[k] for k in ('ig_login_token_installed','token_expiry_metadata',
+                   'daily_producer_cron_present','publisher_cron_present',
+                   'git_remote_without_embedded_credentials','ig_login_runner_present'))
+    if cron_active and not scheduled:
+        print('ACTIVE_UNVERIFIED: daily cron on; next batch not yet produced')
+    else:
+        print('NOT_READY: automatic IG publish gates incomplete')
+    return 2
 
 if __name__=='__main__':raise SystemExit(run())

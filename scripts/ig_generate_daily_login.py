@@ -119,16 +119,33 @@ def main(dry_run=False, now=None):
     if now.hour>=8:raise RuntimeError('Daily generator ran too late for 08 slot')
     if now.weekday()==4:
         raise RuntimeError('Friday news requires source-claim review; no auto scheduling')
+    base=ROOT/'data/ig-generated'
+    files=[base/(now.strftime('%Y%m%d')+f'-{hour:02}.json') for hour in HOURS]
+    if not dry_run and any(f.exists() for f in files):
+        if not all(f.exists() for f in files):
+            raise RuntimeError('Partial draft files; manual review, no regeneration')
+        items=[json.loads(f.read_text()) for f in files]
+        for f,d,hour in zip(files,items,HOURS):
+            if d.get('id')!=now.strftime('%Y%m%d')+f'-{hour:02}':
+                raise RuntimeError('Saved draft slot mismatch')
+            check_draft(d,now)
+        queue=json.loads((ROOT/'queue.json').read_text())
+        existing=[p for p in queue['posts'] if p.get('id') in {d['id'] for d in items}]
+        if existing:
+            if len(existing)!=3 or any(not any(
+                    p.get('id')==d['id'] and p.get('post_time')==d['post_time']
+                    and p.get('caption')==d['caption'] and p.get('status') in ('scheduled','published')
+                    for p in existing) for d in items):
+                raise RuntimeError('Partial or mismatched daily queue; manual review')
+            return 3
+        run_batch(files,now=now)
+        return 3
     items=structure(generate(now),now)
     if dry_run:return len(items)
-    base=ROOT/'data/ig-generated';base.mkdir(parents=True,exist_ok=True)
-    files=[]
-    for d in items:
-        file=base/(d['id']+'.json')
-        if file.exists():raise RuntimeError('Draft already exists; no overwrite')
+    base.mkdir(parents=True,exist_ok=True)
+    for d,file in zip(items,files):
         file.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
         os.chmod(file,0o600)
-        files.append(file)
     run_batch(files,now=now)
     return len(items)
 

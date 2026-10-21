@@ -38,6 +38,30 @@ class GenerationTests(unittest.TestCase):
                 self.assertEqual(len(run.call_args.args[0]),3)
                 self.assertEqual(len(list((Path(td)/'data/ig-generated').glob('*.json'))),3)
 
+    def test_existing_drafts_resume_without_regenerating(self):
+        import json,tempfile
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);base=root/'data/ig-generated';base.mkdir(parents=True)
+            for d in m.structure(raw(),NOW):
+                (base/(d['id']+'.json')).write_text(json.dumps(d))
+            (root/'queue.json').write_text(json.dumps({'posts':[]}))
+            with patch.object(m,'ROOT',root),patch.object(m,'generate') as generate,patch.object(m,'run_batch') as batch:
+                self.assertEqual(m.main(now=NOW),3)
+                generate.assert_not_called()
+                batch.assert_called_once()
+
+    def test_existing_queued_slots_are_noop(self):
+        import json,tempfile
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);base=root/'data/ig-generated';base.mkdir(parents=True)
+            rows=m.structure(raw(),NOW)
+            for d in rows:(base/(d['id']+'.json')).write_text(json.dumps(d))
+            (root/'queue.json').write_text(json.dumps({'posts':[{**d,'status':'scheduled'} for d in rows]}))
+            with patch.object(m,'ROOT',root),patch.object(m,'generate') as generate,patch.object(m,'run_batch') as batch:
+                self.assertEqual(m.main(now=NOW),3)
+                generate.assert_not_called()
+                batch.assert_not_called()
+
     def test_friday_missing_source_rejected(self):
         friday=NOW+timedelta(days=1)
         with self.assertRaisesRegex(RuntimeError,'approved article'):m.structure(raw(),friday)
