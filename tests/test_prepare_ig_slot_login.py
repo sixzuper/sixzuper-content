@@ -60,4 +60,21 @@ class PrepareTests(unittest.TestCase):
             self.assertEqual([p['status'] for p in posts],['scheduled']*3)
             self.assertEqual([p['id'] for p in posts],['20261022-08','20261022-13','20261022-19'])
 
+    def test_batch_cdn_failure_does_not_schedule_any_slot(self):
+        tomorrow=datetime(2026,10,22,5,15,tzinfo=WIB)
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);queue=root/'queue.json';lock=root/'data/lock'
+            queue.write_text(json.dumps({'posts':[]}))
+            files=[]
+            for hour in (8,13,19):
+                d=json.loads(DRAFT.read_text())
+                d['id']='20261022-%02d'%hour
+                d['post_time']='2026-10-22T%02d:00:00+07:00'%hour
+                d['caption']=d['caption'].replace('2026102113','20261022%02d'%hour)
+                p=root/('draft-%02d.json'%hour);p.write_text(json.dumps(d));files.append(p)
+            with patch.object(m,'ROOT',root),patch.object(m,'QUEUE',queue),patch.object(m,'LOCK',lock),patch.object(m,'render'),patch.object(m,'publish_assets',side_effect=RuntimeError('CDN mismatch')):
+                with self.assertRaisesRegex(RuntimeError,'CDN mismatch'):
+                    m.run_batch(files,now=tomorrow)
+            self.assertEqual(json.loads(queue.read_text())['posts'],[])
+
 if __name__=='__main__':unittest.main()
