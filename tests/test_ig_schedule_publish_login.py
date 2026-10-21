@@ -85,6 +85,27 @@ class PublisherTests(unittest.TestCase):
                 m.main(NOW)
         self.assertTrue((self.pending/'20261021-13.json').exists())
         self.assertEqual(json.loads(self.q.read_text())['posts'][0]['status'], 'scheduled')
+    def test_publish_path_one_post_and_exact_readback(self):
+        remote = {'id':'12345','caption':CAPTION,'permalink':'https://www.instagram.com/p/test/',
+                  'media_type':'IMAGE','timestamp':'2026-10-21T06:00:00+0000'}
+        calls=[]
+        def api(method,path,token,**kwargs):
+            calls.append((method,path))
+            if path=='me':return {'user_id':'123','username':'sixzuper','account_type':'BUSINESS'}
+            if path=='me/media':return {'data': []}
+            if method=='POST' and path=='123/media':return {'id':'container1'}
+            if method=='GET' and path=='container1':return {'status_code':'FINISHED'}
+            if method=='POST' and path=='123/media_publish':return {'id':'12345'}
+            if method=='GET' and path=='12345':return remote
+            self.fail('Unexpected call '+str((method,path)))
+        with patch.object(m,'config',return_value=('IGAATfake','123','sixzuper')), patch.object(m,'api',side_effect=api), patch.object(m,'verify_media',return_value=None):
+            self.assertEqual(m.main(NOW),0)
+            self.assertEqual(m.main(NOW),0)
+        self.assertEqual(calls.count(('POST','123/media')),1)
+        self.assertEqual(calls.count(('POST','123/media_publish')),1)
+        self.assertEqual(json.loads(self.q.read_text())['posts'][0]['status'],'published')
+        self.assertEqual(json.loads((self.pending/'20261021-13.json').read_text())['status'],'verified')
+
     def test_invalid_token_keeps_queue_scheduled(self):
         with patch.object(m, 'config', return_value=('IGAATfake','123','sixzuper')), patch.object(m, 'api', side_effect=RuntimeError('Meta HTTP 400 code 190')):
             with self.assertRaisesRegex(RuntimeError, 'code 190'):
