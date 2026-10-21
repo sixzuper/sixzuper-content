@@ -29,6 +29,14 @@ class GenerationTests(unittest.TestCase):
         p=raw();p['posts'][0]['card_lines'][0]='K'*50
         with self.assertRaisesRegex(RuntimeError,'malformed'):m.structure(p,NOW)
 
+    def test_full_daily_production_invokes_three_slots_without_meta(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            with patch.object(m,'ROOT',Path(td)), patch.object(m,'generate',return_value=raw()), patch.object(m,'run') as run:
+                self.assertEqual(m.main(dry_run=False,now=NOW),3)
+                self.assertEqual(run.call_count,3)
+                self.assertEqual(len(list((Path(td)/'data/ig-generated').glob('*.json'))),3)
+
     def test_friday_missing_source_rejected(self):
         friday=NOW+timedelta(days=1)
         with self.assertRaisesRegex(RuntimeError,'approved article'):m.structure(raw(),friday)
