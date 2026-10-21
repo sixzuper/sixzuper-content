@@ -14,6 +14,12 @@
 - Runner `scripts/ig_daily_publish.py` saat ini aman terhadap dry-run tetapi **berbicara dengan Facebook Graph**, sedangkan token Page Facebook kini 190/463. **Jangan aktifkan cron untuk runner ini.**
 - Token IGAAT yang dipakai pada post kedua **tidak disimpan di `.env`**; umur tepat dan mekanisme refresh belum diverifikasi pada mesin. Kredensial Git remote masih perlu dijauhkan dari URL sebelum dipakai oleh cron berulang.
 
+## Pemeriksaan cepat (read-only)
+```bash
+cd ~/sixzuper-content && .venv/bin/python3 scripts/ig_autopublish_preflight.py
+```
+`PASS/BLOCK` per gerbang; exit `2` bila belum siap. Pada audit awal: `NOT_READY` karena token IG Login dan metadata expiry belum terpasang, antrean terjadwal kosong, job publisher/producer belum ada, dan remote Git masih mengandung kredensial dalam URL. `READY` dari preflight pun **bukan** pengganti bukti satu slot yang terbit lewat scheduler dan Graph readback.
+
 ## Tahap implementasi dan gerbang
 
 ### 1. Kredensial dan host API — WAJIB sebelum cron
