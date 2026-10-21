@@ -113,6 +113,59 @@ def publish_asset(path):
     return url, local_hash
 
 
+def publish_assets(paths):
+    """Push precisely the requested images once; return verified CDN URLs/digests."""
+    if git('remote','get-url','origin')!='https://github.com/sixzuper/sixzuper-content.git':
+        raise RuntimeError('Git remote is not credential-free approved URL')
+    names=[str(path.relative_to(ROOT)) for path in paths]
+    git('add','--',*names)
+    staged=git('diff','--cached','--name-only').splitlines()
+    if sorted(staged)!=sorted(names):
+        raise RuntimeError('Unexpected staged files or unchanged media; refuse to commit')
+    git('commit','-m','media: scheduled IG daily batch','--',*names)
+    sha=git('rev-parse','HEAD')
+    git('push','origin','main')
+    if git('ls-remote','origin','refs/heads/main').split()[0]!=sha:
+        raise RuntimeError('Remote commit does not match local HEAD')
+    result=[]
+    for path,name in zip(paths,names):
+        url=REPO+sha+'/'+quote(name)
+        r=requests.get(url,timeout=35)
+        if r.status_code!=200 or not r.headers.get('Content-Type','').startswith('image/jpeg'):
+            raise RuntimeError('Public CDN JPEG failed for '+name)
+        digest=hashlib.sha256(path.read_bytes()).hexdigest()
+        if hashlib.sha256(r.content).hexdigest()!=digest:
+            raise RuntimeError('CDN content digest mismatch for '+name)
+        result.append((url,digest))
+    return result
+
+
+def run_batch(sources,now=None):
+    """Validate all three before writing any queue item; never bulk-convert old drafts."""
+    now=now or datetime.now(WIB)
+    drafts=[json.loads(path.read_text()) for path in sources]
+    if len(drafts)!=3 or len({d.get('id') for d in drafts})!=3:
+        raise RuntimeError('Daily batch requires three unique draft IDs')
+    for d in drafts:check_draft(d,now)
+    LOCK.parent.mkdir(parents=True,exist_ok=True)
+    with LOCK.open('a+') as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX)
+        q=json.loads(QUEUE.read_text())
+        ids={str(p.get('id')) for p in q['posts']}
+        slots={p.get('post_time') for p in q['posts'] if p.get('status')=='scheduled'}
+        if any(d['id'] in ids or d['post_time'] in slots for d in drafts):
+            raise RuntimeError('Daily slot already exists; no overwrite')
+        paths=[ROOT/'media'/('ig-'+d['id']+'.jpg') for d in drafts]
+        for d,path in zip(drafts,paths):render(d,path)
+        published=publish_assets(paths)
+        for d,source,(url,digest) in zip(drafts,sources,published):
+            q['posts'].append({**d,'source_draft':str(source.resolve().relative_to(ROOT)),
+                               'image_url':url,'image_sha256':digest,'status':'scheduled'})
+        q['last_updated']=datetime.now(WIB).isoformat()
+        atomic_queue(q)
+    return [d['id'] for d in drafts]
+
+
 def atomic_queue(value):
     fd, temp = tempfile.mkstemp(prefix='.queue-',dir=ROOT)
     try:

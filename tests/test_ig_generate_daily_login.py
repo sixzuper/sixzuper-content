@@ -32,9 +32,10 @@ class GenerationTests(unittest.TestCase):
     def test_full_daily_production_invokes_three_slots_without_meta(self):
         import tempfile
         with tempfile.TemporaryDirectory() as td:
-            with patch.object(m,'ROOT',Path(td)), patch.object(m,'generate',return_value=raw()), patch.object(m,'run') as run:
+            with patch.object(m,'ROOT',Path(td)), patch.object(m,'generate',return_value=raw()), patch.object(m,'run_batch') as run:
                 self.assertEqual(m.main(dry_run=False,now=NOW),3)
-                self.assertEqual(run.call_count,3)
+                run.assert_called_once()
+                self.assertEqual(len(run.call_args.args[0]),3)
                 self.assertEqual(len(list((Path(td)/'data/ig-generated').glob('*.json'))),3)
 
     def test_friday_missing_source_rejected(self):

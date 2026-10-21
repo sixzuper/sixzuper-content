@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 from PIL import ImageFont
-from prepare_ig_slot_login import ROOT, BOLD, WIB, check_draft, run
+from prepare_ig_slot_login import ROOT, BOLD, WIB, check_draft, run_batch
 
 TOPICS = {
   0: 'AI lokal membantu pekerjaan nyata di home lab',
@@ -122,13 +122,14 @@ def main(dry_run=False, now=None):
     items=structure(generate(now),now)
     if dry_run:return len(items)
     base=ROOT/'data/ig-generated';base.mkdir(parents=True,exist_ok=True)
+    files=[]
     for d in items:
         file=base/(d['id']+'.json')
         if file.exists():raise RuntimeError('Draft already exists; no overwrite')
         file.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
         os.chmod(file,0o600)
-    for d in items:
-        run(base/(d['id']+'.json'),now=now)
+        files.append(file)
+    run_batch(files,now=now)
     return len(items)
 
 if __name__=='__main__':

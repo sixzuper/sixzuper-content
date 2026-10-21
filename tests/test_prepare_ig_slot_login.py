@@ -40,4 +40,24 @@ class PrepareTests(unittest.TestCase):
                     render.assert_not_called();upload.assert_not_called()
             finally:m.QUEUE=old
 
+    def test_three_slot_batch_writes_queue_once_after_upload(self):
+        tomorrow=datetime(2026,10,22,5,15,tzinfo=WIB)
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);queue=root/'queue.json';lock=root/'data/lock'
+            queue.write_text(json.dumps({'posts':[]}))
+            files=[]
+            for hour in (8,13,19):
+                d=json.loads(DRAFT.read_text())
+                d['id']='20261022-%02d'%hour
+                d['post_time']='2026-10-22T%02d:00:00+07:00'%hour
+                d['caption']=d['caption'].replace('2026102113','20261022%02d'%hour)
+                p=root/('draft-%02d.json'%hour);p.write_text(json.dumps(d));files.append(p)
+            assets=[('https://raw.githubusercontent.com/sixzuper/sixzuper-content/main/media/ig-%02d.jpg'%h,'a'*64) for h in (8,13,19)]
+            with patch.object(m,'ROOT',root),patch.object(m,'QUEUE',queue),patch.object(m,'LOCK',lock),patch.object(m,'render'),patch.object(m,'publish_assets',return_value=assets) as upload:
+                self.assertEqual(len(m.run_batch(files,now=tomorrow)),3)
+                upload.assert_called_once()
+            posts=json.loads(queue.read_text())['posts']
+            self.assertEqual([p['status'] for p in posts],['scheduled']*3)
+            self.assertEqual([p['id'] for p in posts],['20261022-08','20261022-13','20261022-19'])
+
 if __name__=='__main__':unittest.main()
