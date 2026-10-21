@@ -22,6 +22,7 @@ data/*-once-state.json
 data/*-once.lock
 data/ig-publish.lock
 data/ig-publish-pending/
+data/ig-generated/
 
 # Local/generated draft artifacts
 scripts/queue.json

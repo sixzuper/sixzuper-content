@@ -27,7 +27,7 @@ def run():
     results['publisher_cron_present']=any('ig_daily_publish' in json.dumps(j) or 'sixzuper-ig-publish-one-slot.py' in json.dumps(j) for j in active)
     results['producer_writes_queue']=bool(scheduled) and all(
         (ROOT / p.get('source_draft','')).is_file() and
-        p.get('source_draft','').startswith('content/') and
+        p.get('source_draft','').startswith(('content/', 'data/ig-generated/')) and
         bool(p.get('image_sha256')) for p in scheduled)
     remote=subprocess.run(['git','remote','get-url','origin'],cwd=ROOT,text=True,capture_output=True)
     u=urlparse(remote.stdout.strip())
