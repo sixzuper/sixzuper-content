@@ -14,7 +14,7 @@ from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 import requests
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 ROOT = Path(__file__).resolve().parents[1]
 QUEUE = ROOT / 'queue.json'
@@ -50,15 +50,29 @@ def check_draft(d, now):
     return when
 
 
-def render(d, output):
+def render(d, output, background=None):
     w, h = 1080, 1350
-    im = Image.new('RGB', (w, h))
-    pix = im.load()
-    for y in range(h):
-        for x in range(w):
-            glow = max(0, 1 - ((x - 890)**2 / 700**2 + (y - 300)**2 / 650**2))
-            pix[x, y] = (int(15 + 72*glow + 17*y/h), int(20 + 15*glow), int(32 + 4*glow))
-    draw = ImageDraw.Draw(im)
+    if background is not None:
+        with Image.open(background) as source:
+            source.load()
+            if source.width<768 or source.height<960:
+                raise RuntimeError('AI illustration too small')
+            im=ImageOps.fit(source.convert('RGB'),(w,h),method=Image.Resampling.LANCZOS)
+        draw=ImageDraw.Draw(im,'RGBA')
+        draw.rectangle((0,0,w,404),fill=(12,18,31,220))
+        draw.rectangle((0,1180,w,h),fill=(12,18,31,225))
+        panel_fill=(24,29,43,215)
+    else:
+        im = Image.new('RGB', (w, h))
+        pix = im.load()
+        if pix is None:
+            raise RuntimeError('Canvas pixels unavailable')
+        for y in range(h):
+            for x in range(w):
+                glow = max(0, 1 - ((x - 890)**2 / 700**2 + (y - 300)**2 / 650**2))
+                pix[x, y] = (int(15 + 72*glow + 17*y/h), int(20 + 15*glow), int(32 + 4*glow))
+        draw=ImageDraw.Draw(im)
+        panel_fill='#202431'
     orange, cream, muted = '#FF9C65', '#FFF1E4', '#C7CED8'
     draw.rectangle((68, 66, 1012, 70), fill=orange)
     draw.text((72, 102), 'SIXZUPER / LABS', font=ImageFont.truetype(BOLD, 34), fill=orange)
@@ -66,7 +80,7 @@ def render(d, output):
     draw.text((74, 303), 'HOME LAB  •  STB → MINI PC', font=ImageFont.truetype(FONT, 28), fill=muted)
     coords = [(95, 473), (95, 705), (95, 937)]
     for i, ((x,y), text) in enumerate(zip(coords, d['card_lines']), 1):
-        draw.rounded_rectangle((70,y-47,1010,y+130), radius=26, fill='#202431', outline='#C66A4A', width=3)
+        draw.rounded_rectangle((70,y-47,1010,y+130), radius=26, fill=panel_fill, outline='#C66A4A', width=3)
         draw.ellipse((x,y-11,x+72,y+61), fill='#F28A5C')
         draw.text((x+22,y+4),str(i),font=ImageFont.truetype(BOLD,32),fill='#19212B')
         draw.text((x+95,y+1),text,font=ImageFont.truetype(BOLD,27),fill=cream)
@@ -145,13 +159,32 @@ def publish_assets(paths):
     return result
 
 
-def run_batch(sources,now=None):
-    """Validate all three before writing any queue item; never bulk-convert old drafts."""
+def run_batch(sources,now=None,illustrations=None):
+    """Validate all three before writing any queue item; no historical bulk import.
+
+    AI illustrations are opt-in. Default behavior is unchanged until provider QA
+    and a separate cron switch have been approved and verified.
+    """
     now=now or datetime.now(WIB)
     drafts=[json.loads(path.read_text()) for path in sources]
     if len(drafts)!=3 or len({d.get('id') for d in drafts})!=3:
         raise RuntimeError('Daily batch requires three unique draft IDs')
     for d in drafts:check_draft(d,now)
+    if illustrations is not None:
+        if len(illustrations)!=3 or any(not p.is_file() for p in illustrations):
+            raise RuntimeError('Three AI illustrations required before scheduling')
+        hashes=[]
+        for p in illustrations:
+            try:
+                with Image.open(p) as art:
+                    art.load()
+                    if art.width<768 or art.height<960:
+                        raise RuntimeError('AI illustration resolution too small')
+                hashes.append(hashlib.sha256(p.read_bytes()).hexdigest())
+            except (OSError,ValueError):
+                raise RuntimeError('AI illustration unreadable') from None
+        if len(set(hashes))!=3:
+            raise RuntimeError('AI illustrations identical; no scheduling')
     LOCK.parent.mkdir(parents=True,exist_ok=True)
     with LOCK.open('a+') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX)
@@ -161,7 +194,11 @@ def run_batch(sources,now=None):
         if any(d['id'] in ids or d['post_time'] in slots for d in drafts):
             raise RuntimeError('Daily slot already exists; no overwrite')
         paths=[ROOT/'media'/('ig-'+d['id']+'.jpg') for d in drafts]
-        for d,path in zip(drafts,paths):render(d,path)
+        for i,(d,path) in enumerate(zip(drafts,paths)):
+            if illustrations is None:
+                render(d,path)
+            else:
+                render(d,path,background=illustrations[i])
         published=publish_assets(paths)
         for d,source,(url,digest) in zip(drafts,sources,published):
             q['posts'].append({**d,'source_draft':str(source.resolve().relative_to(ROOT)),

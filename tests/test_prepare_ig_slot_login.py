@@ -60,6 +60,40 @@ class PrepareTests(unittest.TestCase):
             self.assertEqual([p['status'] for p in posts],['scheduled']*3)
             self.assertEqual([p['id'] for p in posts],['20261022-08','20261022-13','20261022-19'])
 
+    def test_batch_requires_three_ai_backgrounds_before_queue_write(self):
+        tomorrow=datetime(2026,10,22,5,15,tzinfo=WIB)
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);queue=root/'queue.json';queue.write_text(json.dumps({'posts':[]}))
+            sources=[]
+            for hour in (8,13,19):
+                d=json.loads(DRAFT.read_text());d['id']=f'20261022-{hour:02}'
+                d['post_time']=f'2026-10-22T{hour:02}:00:00+07:00'
+                d['caption']=d['caption'].replace('2026102113',f'20261022{hour:02}')
+                f=root/f'{hour}.json';f.write_text(json.dumps(d));sources.append(f)
+            missing=[root/'a.png',root/'b.png',root/'c.png']
+            with patch.object(m,'ROOT',root),patch.object(m,'QUEUE',queue),patch.object(m,'LOCK',root/'lock'),patch.object(m,'render') as render,patch.object(m,'publish_assets') as upload:
+                with self.assertRaisesRegex(RuntimeError,'illustration'):
+                    m.run_batch(sources,now=tomorrow,illustrations=missing)
+                render.assert_not_called();upload.assert_not_called()
+            self.assertEqual(json.loads(queue.read_text())['posts'],[])
+
+    def test_batch_uses_all_three_ai_backgrounds(self):
+        from PIL import Image
+        tomorrow=datetime(2026,10,22,5,15,tzinfo=WIB)
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);queue=root/'queue.json';queue.write_text(json.dumps({'posts':[]}))
+            sources=[];backgrounds=[]
+            for hour in (8,13,19):
+                d=json.loads(DRAFT.read_text());d['id']=f'20261022-{hour:02}'
+                d['post_time']=f'2026-10-22T{hour:02}:00:00+07:00'
+                d['caption']=d['caption'].replace('2026102113',f'20261022{hour:02}')
+                f=root/f'{hour}.json';f.write_text(json.dumps(d));sources.append(f)
+                art=root/f'{hour}.png';Image.new('RGB',(1024,1280),(hour*6,30,60)).save(art);backgrounds.append(art)
+            urls=[('https://example.com/a.jpg','a'*64)]*3
+            with patch.object(m,'ROOT',root),patch.object(m,'QUEUE',queue),patch.object(m,'LOCK',root/'lock'),patch.object(m,'render') as render,patch.object(m,'publish_assets',return_value=urls):
+                m.run_batch(sources,now=tomorrow,illustrations=backgrounds)
+                self.assertEqual([x.kwargs['background'] for x in render.call_args_list],backgrounds)
+
     def test_batch_reuses_committed_assets_after_failed_cdn_read(self):
         import hashlib
         with tempfile.TemporaryDirectory() as td:
