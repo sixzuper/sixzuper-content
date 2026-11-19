@@ -16,6 +16,8 @@ from zoneinfo import ZoneInfo
 import requests
 from PIL import ImageFont
 from prepare_ig_slot_login import ROOT, BOLD, WIB, check_draft, run_batch
+from ig_ai_illustration import generate as generate_art, image_prompt
+import hashlib
 
 TOPICS = {
   0: 'AI lokal membantu pekerjaan nyata di home lab',
@@ -114,6 +116,51 @@ def structure(raw,now):
     return built
 
 
+def prepare_illustrations(items):
+    """Generate/cache three topic-specific private PNGs; fail before queue writes."""
+    env_path=Path.home()/'.hermes/.env'
+    if not env_path.is_file() or env_path.stat().st_mode & 0o077:
+        raise RuntimeError('Private image API environment missing or permissions unsafe')
+    settings={}
+    for line in env_path.read_text().splitlines():
+        line=line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            name,value=line.split('=',1)
+            settings[name.strip()]=value.strip().strip("\"'")
+    key=settings.get('GOOGLE_API_KEY','')
+    if not key:raise RuntimeError('Image API key missing; no scheduling')
+    out=ROOT/'data/ig-ai-generated';out.mkdir(parents=True,exist_ok=True);os.chmod(out,0o700)
+    paths=[]
+    for draft in items:
+        ident=draft['id'];target=out/f'ig-art-{ident}.png';meta=out/f'ig-art-{ident}.json'
+        prompt_hash=hashlib.sha256(image_prompt(draft).encode()).hexdigest()
+        reusable=False
+        if target.is_file() and meta.is_file():
+            try:
+                record=json.loads(meta.read_text())
+                reusable=(record.get('prompt_sha256')==prompt_hash and
+                          record.get('sha256')==hashlib.sha256(target.read_bytes()).hexdigest())
+                if reusable:
+                    from PIL import Image
+                    with Image.open(target) as im:
+                        im.load()
+                        reusable=im.width>=768 and im.height>=960 and 0.69<im.width/im.height<0.91
+            except (OSError,ValueError,TypeError):
+                reusable=False
+        if not reusable:
+            info=generate_art(draft,target,key)
+            if info.get('prompt_sha256')!=prompt_hash:
+                raise RuntimeError('Image prompt metadata mismatch; no scheduling')
+            record={'id':ident,'prompt_sha256':prompt_hash,'sha256':info['sha256'],'model':info['model']}
+            tmp=meta.with_suffix('.json.tmp')
+            tmp.write_text(json.dumps(record,ensure_ascii=False)+'\n')
+            os.chmod(tmp,0o600);os.replace(tmp,meta)
+        paths.append(target)
+    if len({hashlib.sha256(p.read_bytes()).hexdigest() for p in paths})!=3:
+        raise RuntimeError('AI illustration batch contains duplicate assets; no scheduling')
+    return paths
+
+
 def main(dry_run=False, now=None):
     now=now or datetime.now(WIB)
     if now.hour>=8:raise RuntimeError('Daily generator ran too late for 08 slot')
@@ -138,15 +185,17 @@ def main(dry_run=False, now=None):
                     for p in existing) for d in items):
                 raise RuntimeError('Partial or mismatched daily queue; manual review')
             return 3
-        run_batch(files,now=now)
+        illustrations=prepare_illustrations(items)
+        run_batch(files,now=now,illustrations=illustrations)
         return 3
     items=structure(generate(now),now)
     if dry_run:return len(items)
+    illustrations=prepare_illustrations(items)
     base.mkdir(parents=True,exist_ok=True)
     for d,file in zip(items,files):
         file.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
         os.chmod(file,0o600)
-    run_batch(files,now=now)
+    run_batch(files,now=now,illustrations=illustrations)
     return len(items)
 
 if __name__=='__main__':

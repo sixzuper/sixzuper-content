@@ -32,7 +32,9 @@ class GenerationTests(unittest.TestCase):
     def test_full_daily_production_invokes_three_slots_without_meta(self):
         import tempfile
         with tempfile.TemporaryDirectory() as td:
-            with patch.object(m,'ROOT',Path(td)), patch.object(m,'generate',return_value=raw()), patch.object(m,'run_batch') as run:
+            with patch.object(m,'ROOT',Path(td)), patch.object(m,'generate',return_value=raw()), \
+                 patch.object(m,'prepare_illustrations',return_value=[Path(td)/f'{i}.png' for i in range(3)]), \
+                 patch.object(m,'run_batch') as run:
                 self.assertEqual(m.main(dry_run=False,now=NOW),3)
                 run.assert_called_once()
                 self.assertEqual(len(run.call_args.args[0]),3)
@@ -45,7 +47,9 @@ class GenerationTests(unittest.TestCase):
             for d in m.structure(raw(),NOW):
                 (base/(d['id']+'.json')).write_text(json.dumps(d))
             (root/'queue.json').write_text(json.dumps({'posts':[]}))
-            with patch.object(m,'ROOT',root),patch.object(m,'generate') as generate,patch.object(m,'run_batch') as batch:
+            with patch.object(m,'ROOT',root),patch.object(m,'generate') as generate, \
+                 patch.object(m,'prepare_illustrations',return_value=[root/f'{i}.png' for i in range(3)]), \
+                 patch.object(m,'run_batch') as batch:
                 self.assertEqual(m.main(now=NOW),3)
                 generate.assert_not_called()
                 batch.assert_called_once()
@@ -57,10 +61,55 @@ class GenerationTests(unittest.TestCase):
             rows=m.structure(raw(),NOW)
             for d in rows:(base/(d['id']+'.json')).write_text(json.dumps(d))
             (root/'queue.json').write_text(json.dumps({'posts':[{**d,'status':'scheduled'} for d in rows]}))
-            with patch.object(m,'ROOT',root),patch.object(m,'generate') as generate,patch.object(m,'run_batch') as batch:
+            with patch.object(m,'ROOT',root),patch.object(m,'generate') as generate, \
+                 patch.object(m,'prepare_illustrations',return_value=[root/f'{i}.png' for i in range(3)]), \
+                 patch.object(m,'run_batch') as batch:
                 self.assertEqual(m.main(now=NOW),3)
                 generate.assert_not_called()
                 batch.assert_not_called()
+
+    def test_daily_producer_sends_three_generated_illustrations_into_batch(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            with patch.object(m,'ROOT',root),patch.object(m,'generate',return_value=raw()), \
+                 patch.object(m,'prepare_illustrations',return_value=[root/f'{i}.png' for i in range(3)]) as art, \
+                 patch.object(m,'run_batch') as run:
+                self.assertEqual(m.main(now=NOW),3)
+                art.assert_called_once()
+                run.assert_called_once()
+                self.assertEqual(run.call_args.kwargs['illustrations'],art.return_value)
+
+    def test_image_failure_holds_slots_before_batch_and_asset_writes(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            with patch.object(m,'ROOT',root),patch.object(m,'generate',return_value=raw()), \
+                 patch.object(m,'prepare_illustrations',side_effect=RuntimeError('Image API HTTP 429')), \
+                 patch.object(m,'run_batch') as run:
+                with self.assertRaisesRegex(RuntimeError,'429'):
+                    m.main(now=NOW)
+                run.assert_not_called()
+                self.assertFalse((root/'data/ig-generated').exists())
+
+    def test_existing_unqueued_drafts_also_require_ai_art_before_batch(self):
+        import json,tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);base=root/'data/ig-generated';base.mkdir(parents=True)
+            rows=m.structure(raw(),NOW)
+            for d in rows:(base/(d['id']+'.json')).write_text(json.dumps(d))
+            (root/'queue.json').write_text(json.dumps({'posts':[]}))
+            art=[root/f'{i}.png' for i in range(3)]
+            with patch.object(m,'ROOT',root),patch.object(m,'generate') as generate, \
+                 patch.object(m,'prepare_illustrations',return_value=art) as prepare,patch.object(m,'run_batch') as batch:
+                self.assertEqual(m.main(now=NOW),3)
+                generate.assert_not_called()
+                prepare.assert_called_once_with(rows)
+                batch.assert_called_once()
+                self.assertEqual(batch.call_args.kwargs['illustrations'],art)
 
     def test_friday_missing_source_rejected(self):
         friday=NOW+timedelta(days=1)
